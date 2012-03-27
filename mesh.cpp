@@ -144,7 +144,7 @@ void Mesh::save_plane(const char * filename)
   std::vector<std::set<int> > vlabel(v.size());
 // std::vector< std::vector<std::vector<int> > > lines();
   lines.resize(nLabel);
-  std::vector<Plane> planes;
+//  std::vector<Plane> planes;
   for(size_t ii=0; ii<t.size(); ii++) {
     for(int jj=0; jj<3; jj++) {
       int vidx=t[ii][jj];
@@ -227,7 +227,6 @@ void Mesh::save_plane(const char * filename)
       cur = next;
     }
     if(vertlist.size()>2) {
-      std::cout<<"add label"<<label<<"\n";
       lines[label].push_back(vertlist);
     }
   }
@@ -246,7 +245,7 @@ void Mesh::save_plane(const char * filename)
     Vec3 ax, ay;
     Vec3 n=planes[ii].n;
     Vec3 arbit(1,0,0);
-    if(n[0]>0.9) {
+    if(std::abs(n[0])>0.9) {
       arbit=Vec3(0,1,0);
     }
     ax = arbit.cross(n);
@@ -258,8 +257,8 @@ void Mesh::save_plane(const char * filename)
       out<<lines[ii][jj].size()<<"\n";
       for(size_t kk=0; kk<lines[ii][jj].size(); kk++) {
         Vec3 d = v[lines[ii][jj][kk]]-v0;
-        float x = (d.dot(ax))*50+10;
-        float y = (d.dot(ay))*50+10;
+        float x = (d.dot(ax));
+        float y = (d.dot(ay));
         out<<x<<","<<y<<" ";
       }
       out<<"\n";
@@ -270,7 +269,7 @@ void Mesh::save_plane(const char * filename)
 }
 
 Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel)
+  :nLabel(_nLabel),highlight(0)
 {
   std::ifstream f ;
   f.open(filename);
@@ -397,6 +396,7 @@ void Mesh::draw(std::vector<Vec3>&v)
     glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
     //glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
     glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+
   }
   glEnd();
 
@@ -442,6 +442,16 @@ void Mesh::drawLines()
         int v1=lines[ii][jj][kk1];
         glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
         glVertex3f(v[v1][0],v[v1][1],v[v1][2]);
+
+        if((int)ii==highlight && planes.size()>ii){
+        Vec3 v0hl=v[v0]+planes[ii].n;
+        Vec3 v1hl=v[v1]+planes[ii].n;
+        glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
+        glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
+        glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
+        glVertex3f(v1hl[0],v1hl[1],v1hl[2]);
+
+        }
       }
     }
   }

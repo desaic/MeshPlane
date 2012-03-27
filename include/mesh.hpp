@@ -41,6 +41,9 @@ public:
   bool has_v4;
 
   void get_normal_center();
+  std::vector<Plane>planes;
+  int highlight;
+
 private:
   void compute_norm();
   std::vector<Vec3>color;

@@ -222,7 +222,21 @@ void* iterate(void* arg){
   //m->save_plane("bunny_plane.txt");
   return 0;
 }
+#include <iostream>
+#include <string>
+#include <sstream>
+void *scanHighlight(void * arg)
+{
+  Mesh * m = (Mesh*)arg;
+  while(1){
+    std::string s;
+    std::getline(std::cin,s);
+    std::stringstream ss(s);
+    ss>>m->highlight;
+  }
+  return 0;
 
+}
 int main(int argc, char** argv)
 {
   if(argc<2){
@@ -254,6 +268,11 @@ int main(int argc, char** argv)
 //  pthread_create(&thread, 0, iterate,(void*)m);
  // pthread_detach(thread);
   //p=new Poly(m);
+
+  pthread_t hlthread;
+  pthread_create(&hlthread,0,scanHighlight,(void*)m);
+  pthread_detach(hlthread);
+
   cam=new Cam();
   glutMainLoop();
   return 0;
