@@ -51,4 +51,8 @@ private:
 
 };
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
+/**@param m assume triangle norms and centers are already computed
+ */
+void get_plane(Mesh & m , std::vector<Plane> & plane);
+
 #endif

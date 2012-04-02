@@ -1,5 +1,11 @@
 #include "math.hpp"
 #include "randomc.h"
+
+Vec3 operator*(real_t c, const Vec3 & v)
+{
+  return v*c;
+}
+
 real_t logsum(std::vector<real_t > & x)
 {
   real_t m = x[0];

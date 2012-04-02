@@ -18,7 +18,7 @@ struct Vec3{
   Vec3 operator-(Vec3 &a){
     return Vec3(x[0]-a.x[0],x[1]-a.x[1],x[2]-a.x[2]);
   }
-  Vec3 operator+(Vec3 &a){
+  Vec3 operator+(const Vec3 &a)const{
     return Vec3(x[0]+a.x[0],x[1]+a.x[1],x[2]+a.x[2]);
   }
   Vec3 &operator-=(Vec3 &a){
@@ -58,7 +58,7 @@ struct Vec3{
     x[2]/=a;
     return *this;
   }
-  Vec3 operator*(real_t a){
+  Vec3 operator*(real_t a)const{
     return Vec3(x[0]*a,x[1]*a,x[2]*a);
   }
   Vec3& operator*=(real_t a){
@@ -74,5 +74,5 @@ struct Vec3{
 
 real_t logsum(std::vector<real_t>&x);
 int sample_cdf(std::vector<real_t > &cdf);
-
+Vec3 operator*(real_t c, const Vec3 & v);
 #endif

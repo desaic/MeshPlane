@@ -3,30 +3,7 @@
 #include "sparseccs.h"
 #include "sparseMatrix.h"
 #include "CGSolver.h"
-/**@param m assume triangle norms and centers are already computed
- */
-void get_plane(Mesh & m , std::vector<Plane> & plane)
-{
-  plane.resize(m.nLabel);
-  std::vector<float > cnt (m.nLabel,0);
-  for(size_t ii=0; ii<m.t.size(); ii++) {
-    Vec3 a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
-    Vec3 b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
-    Vec3 n = a.cross(b);
-    float area = n.norm();
-    int label = m.t[ii].label;
-    cnt[label]+=area;
-    plane[label].n += n;
-    a=(m.t[ii].c * area);
-    plane[label].c += a;
-  }
 
-  for(int ii=0; ii<m.nLabel; ii++) {
-    plane[ii].c/=cnt[ii];
-    plane[ii].n/=cnt[ii];
-    plane[ii].n/=plane[ii].n.norm();
-  }
-}
 #include <fstream>
 void add_v4(Mesh & m )
 {
@@ -418,9 +395,11 @@ printAB(ccs,b,0);
   delete []ATb;
 }
 
+float wN=1,wP=1,w0=1,wV=1;
+
 void weighted_avg(Mesh& m)
 {
-  std::vector<int>nbrCnt(m.v.size());
+  std::vector<int>cnt(m.v.size());
   std::vector<Vec3>nbrPos(m.v.size());
   for(size_t ii=0;ii<m.v.size();ii++){
     Vec3 sum;
@@ -429,11 +408,47 @@ void weighted_avg(Mesh& m)
     }
     for(int jj=0;jj<3;jj++){
       nbrPos[m.t[ii][jj]] += (sum-m.v[m.t[ii][jj]]);
-      nbrCnt[m.t[ii][jj]]+=2;
+      cnt[m.t[ii][jj]]+=2;
     }
   }
   std::vector<Vec3> v0 = m.v;
   for(size_t ii=0;ii<m.v.size();ii++){
-    nbrPos[ii]/=nbrCnt[ii];
+    nbrPos[ii]/=cnt[ii];
+    cnt[ii]=0;
+  }
+
+  std::vector<Plane> plane;
+  m.get_normal_center();
+  get_plane(m,plane);
+  std::vector<Vec3> projPos(m.v.size());
+  //--------
+  //  |disp|n
+  //  |    |
+  //   \   |
+  //    \  |
+  //     \v|
+  for(size_t ii=0;ii<m.t.size();ii++){
+    for(int jj=0;jj<3;jj++){
+      int vidx = m.t[ii][jj];
+      int label = m.t[ii].label;
+      real_t d = plane[label].c.dot(plane[label].n);
+      real_t disp=m.v[vidx].dot(plane[label].n);
+      Vec3 vp=m.v[vidx]+plane[label].n*(d-disp);
+      projPos[vidx]+=vp;
+      cnt[vidx]++;
+    }
+  }
+  for(size_t ii=0;ii<m.v.size();ii++){
+    projPos[ii]/=cnt[ii];
+  }
+
+  float wSum=wN+wP+w0+wV;
+  wSum=1/wSum;
+  for(size_t ii=0;ii<m.v.size();ii++){
+    m.v[ii]=wSum*(wN*nbrPos[ii]+
+                  wP*projPos[ii]+
+                  wV*m.v[ii]+
+                  w0*m.v0[ii]);
+
   }
 }

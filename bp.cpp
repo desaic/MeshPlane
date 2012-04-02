@@ -11,7 +11,7 @@ real_t BP::bpdistance(Trig & t , Plane & p)
 }
 
 void BP::update_distance(std::vector<real_t > & dist,
-                         std::vector<real_t > & cdf,
+                      std::vector<real_t > & cdf,
                       std::vector<Plane> & plane,
                       Mesh & m, int ll)
 {
@@ -26,8 +26,6 @@ void BP::update_distance(std::vector<real_t > & dist,
     cdf[ii]=sum;
   }
 }
-
-
 
 BP::BP(Mesh & m):distw(1.0f)
 {
@@ -55,5 +53,4 @@ BP::BP(Mesh & m):distw(1.0f)
     //std::cout<<kk<<"\n";
     update_distance(dist, cdf ,plane,m,kk);
   }
-
 }

@@ -9,4 +9,5 @@ extern  float wV0;
 extern  float wPt;
 extern float vW;
 void cgd(Mesh & m);
+void weighted_avg(Mesh& m);
 #endif

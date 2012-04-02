@@ -212,7 +212,8 @@ void* iterate(void* arg){
     runMincut(*m);
     wV0=1+ii;
     wPt=2+ii*10;
-    cgd(*m);
+    //cgd(*m);
+    weighted_avg(*m);
     //    m->self_intersect();
   }
   wPt=2000;
@@ -264,10 +265,9 @@ int main(int argc, char** argv)
   m=new Mesh (argv[1],nLabel);
   minc_nlabel=nLabel;
   m->save_plane("bunny_plane.txt");
- // pthread_t thread;
-//  pthread_create(&thread, 0, iterate,(void*)m);
- // pthread_detach(thread);
-  //p=new Poly(m);
+  pthread_t thread;
+  pthread_create(&thread, 0, iterate,(void*)m);
+  pthread_detach(thread);
 
   pthread_t hlthread;
   pthread_create(&hlthread,0,scanHighlight,(void*)m);
@@ -276,4 +276,6 @@ int main(int argc, char** argv)
   cam=new Cam();
   glutMainLoop();
   return 0;
+//p=new Poly(m);
+
 }

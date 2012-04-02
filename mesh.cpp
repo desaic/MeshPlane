@@ -301,6 +301,9 @@ Mesh::Mesh(const char * filename, int _nLabel)
       t[ii].label=0;
     } else {
       ss>>t[ii].label;
+      if(ss.fail()){
+        t[ii].label=0;
+      }
     }
     nLabel=std::max(t[ii].label,nLabel);
   }
@@ -529,7 +532,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
   }
 
   for(int ii=0; ii<nLabel; ii++) {
-    if(count[ii]>0) {
+   if(count[ii]>0) {
       plane[ii].n/=plane[ii].n.norm();
       plane[ii].c/=count[ii];
     } else {
@@ -537,5 +540,29 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
     }
+  }
+}
+/**@param m assume triangle norms and centers are already computed
+ */
+void get_plane(Mesh & m , std::vector<Plane> & plane)
+{
+  plane.resize(m.nLabel);
+  std::vector<float > cnt (m.nLabel,0);
+  for(size_t ii=0; ii<m.t.size(); ii++) {
+    Vec3 a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
+    Vec3 b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
+    Vec3 n = a.cross(b);
+    float area = n.norm();
+    int label = m.t[ii].label;
+    cnt[label]+=area;
+    plane[label].n += n;
+    a=(m.t[ii].c * area);
+    plane[label].c += a;
+  }
+
+  for(int ii=0; ii<m.nLabel; ii++) {
+    plane[ii].c/=cnt[ii];
+    plane[ii].n/=cnt[ii];
+    plane[ii].n/=plane[ii].n.norm();
   }
 }
