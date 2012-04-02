@@ -198,23 +198,33 @@ void animate(int t)
 #include "cgd.hpp"
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int NITER=100;
+  int ITER=100;
+  MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  wS=1;
-  wI=1;
-  vW=10;
+  //wS=1;
+  //wI=1;
+  //vW=10;
   dataCostW=300;
   smoothW=100;
 	distw=1;
 	BP bp(*m);
-  for(int ii=0;ii<NITER;ii++){
+ // m->compute_plane();
+
+  for(int ii=0;ii<ITER;ii++){
+
     printf("iter %d\n",ii);
     runMincut(*m);
-    wV0=1+ii;
-    wPt=2+ii*10;
+    m->compute_plane();
+    //wV0=1+ii;
+    wV=1;
+    wN=0;
+    w0=0;
+    wP=0;
     //cgd(*m);
+
     weighted_avg(*m);
-    //    m->self_intersect();
+
+    //m->self_intersect();
   }
   wPt=2000;
   cgd(*m);
@@ -236,7 +246,6 @@ void *scanHighlight(void * arg)
     ss>>m->highlight;
   }
   return 0;
-
 }
 int main(int argc, char** argv)
 {
@@ -264,7 +273,7 @@ int main(int argc, char** argv)
   }
   m=new Mesh (argv[1],nLabel);
   minc_nlabel=nLabel;
-  m->save_plane("bunny_plane.txt");
+  m->compute_plane();
   pthread_t thread;
   pthread_create(&thread, 0, iterate,(void*)m);
   pthread_detach(thread);

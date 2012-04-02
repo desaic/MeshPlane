@@ -43,7 +43,7 @@ public:
   void get_normal_center();
   std::vector<Plane>planes;
   int highlight;
-
+  void compute_plane();
 private:
   void compute_norm();
   std::vector<Vec3>color;

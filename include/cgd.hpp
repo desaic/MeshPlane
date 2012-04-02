@@ -6,7 +6,7 @@
 extern  float wS;
 extern  float wI;
 extern  float wV0;
-extern  float wPt;
+extern  float wPt,wP,wN,wV,w0;
 extern float vW;
 void cgd(Mesh & m);
 void weighted_avg(Mesh& m);

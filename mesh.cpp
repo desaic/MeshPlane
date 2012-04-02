@@ -137,13 +137,16 @@ void findEdge(int va, int vb, std::vector<Trig>& t,
 }
 
 #include <set>
-void Mesh::save_plane(const char * filename)
+void Mesh::compute_plane()
 {
   std::vector<bool>processed(t.size());
   std::vector<std::vector< int > > vtlist(v.size());
   std::vector<std::set<int> > vlabel(v.size());
 // std::vector< std::vector<std::vector<int> > > lines();
   lines.resize(nLabel);
+  for(int ii=0;ii<nLabel;ii++){
+    lines[ii].resize(0);
+  }
 //  std::vector<Plane> planes;
   for(size_t ii=0; ii<t.size(); ii++) {
     for(int jj=0; jj<3; jj++) {
@@ -230,7 +233,10 @@ void Mesh::save_plane(const char * filename)
       lines[label].push_back(vertlist);
     }
   }
+}
 
+void Mesh::save_plane(const char * filename)
+{
   std::ofstream out;
   out.open(filename);
   out<<lines.size()<<"\n";

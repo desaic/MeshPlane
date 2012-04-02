@@ -40,7 +40,7 @@ struct Vec3{
 		x[0]*a.x[1]-x[1]*a.x[0]);
   }
 
-  float dot(Vec3 & v){
+  float dot(const Vec3 & v)const {
     return x[0]*v.x[0]+ x[1]*v.x[1]+ x[2]*v.x[2];
   }
   real_t L1n(){

@@ -6,4 +6,5 @@ extern float dataCostW;
 extern float smoothW;
 extern float distw;
 void runMincut(Mesh & m);
+extern int MC_ITER;
 #endif

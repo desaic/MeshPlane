@@ -401,7 +401,9 @@ void weighted_avg(Mesh& m)
 {
   std::vector<int>cnt(m.v.size());
   std::vector<Vec3>nbrPos(m.v.size());
-  for(size_t ii=0;ii<m.v.size();ii++){
+  std::vector<Vec3> projPos(m.v.size());
+
+  for(size_t ii=0;ii<m.t.size();ii++){
     Vec3 sum;
     for(int jj=0;jj<3;jj++){
       sum += m.v[m.t[ii][jj]];
@@ -420,7 +422,6 @@ void weighted_avg(Mesh& m)
   std::vector<Plane> plane;
   m.get_normal_center();
   get_plane(m,plane);
-  std::vector<Vec3> projPos(m.v.size());
   //--------
   //  |disp|n
   //  |    |
@@ -449,6 +450,5 @@ void weighted_avg(Mesh& m)
                   wP*projPos[ii]+
                   wV*m.v[ii]+
                   w0*m.v0[ii]);
-
   }
 }

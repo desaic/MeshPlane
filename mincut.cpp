@@ -176,13 +176,12 @@ void bfs(Mesh & m)
     m.t[ii].label=newlabel[ii];
   }
 }
-
+int MC_ITER=5;
 void runMincut(Mesh &mesh)
 {
   std::vector<std::vector<float> >datac;
   std::map<std::pair<int, int> , float >smoothc;
   std::vector<Plane> plane;
-  int NITER = 5;
 
   GCoptimizationGeneralGraph * gc = new GCoptimizationGeneralGraph(mesh.t.size(),minc_nlabel);
 
@@ -196,7 +195,7 @@ void runMincut(Mesh &mesh)
       gc->setNeighbors(ii,mesh.adjMat[ii][nbr]);
     }
   }
-  for (int iter = 0;iter<NITER;iter++){
+  for (int iter = 0;iter<MC_ITER;iter++){
     printf("%d\n",iter);
     data_cost(mesh, minc_nlabel, plane, datac);
     smooth_cost(mesh,smoothc);
