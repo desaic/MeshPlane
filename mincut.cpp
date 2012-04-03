@@ -62,7 +62,7 @@ void smooth_cost(Mesh& m,
   float mx = -1;
 
   for(unsigned int ii=0;ii< m.t.size();ii++){
-    for(unsigned int nbr=0;nbr<m.adjMat[nbr].size();nbr++ ){
+    for(unsigned int nbr=0;nbr<m.adjMat[ii].size();nbr++ ){
       unsigned int nbrIdx = m.adjMat[ii][nbr];
       if(nbrIdx<ii){
 	continue;

@@ -201,30 +201,24 @@ void* iterate(void* arg){
   int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  //wS=1;
-  //wI=1;
-  //vW=10;
+  wS=1;
+  wI=1;
+  wV0=1;
+  wPt=1;
+
+  vW=10;
   dataCostW=300;
   smoothW=100;
 	distw=1;
 	BP bp(*m);
- // m->compute_plane();
+  m->compute_plane();
 
   for(int ii=0;ii<ITER;ii++){
-
+    wPt+=2;
     printf("iter %d\n",ii);
     runMincut(*m);
     m->compute_plane();
-    //wV0=1+ii;
-    wV=1;
-    wN=0;
-    w0=0;
-    wP=0;
-    //cgd(*m);
-
-    weighted_avg(*m);
-
-    //m->self_intersect();
+    cgd(*m);
   }
   wPt=2000;
   cgd(*m);
@@ -274,6 +268,7 @@ int main(int argc, char** argv)
   m=new Mesh (argv[1],nLabel);
   minc_nlabel=nLabel;
   m->compute_plane();
+  m->save_plane("plane.txt");
   pthread_t thread;
   pthread_create(&thread, 0, iterate,(void*)m);
   pthread_detach(thread);

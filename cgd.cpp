@@ -5,6 +5,13 @@
 #include "CGSolver.h"
 
 #include <fstream>
+
+float wS=0.1;
+float wI=0.1;
+float wV0=0.1;
+float wPt=5;
+
+void avgNbrPos(Mesh & m, std::vector<Vec3> & nbrPos);
 void add_v4(Mesh & m )
 {
   m.v4.resize(m.t.size());
@@ -148,21 +155,20 @@ for(size_t tIdx=0; tIdx<m.t.size(); tIdx++) {
 /**@brief
   @param b will be filled with 1 0 0 0 1 0 0 0 1
 */
-void identity_mat(Mesh & m , std::vector<Mat3> &mat, float wI, CCS&ccs, double * b)
+void identity_mat(Mesh & m , std::vector<Mat3> &mat, float wI, CCS&ccs, std::vector<double > & bb)
 {
-  int idx=0;
  // int nvar = m.v.size()+m.t.size();
   for(int axis=0; axis<3; axis++) {
 
   for(size_t ii=0; ii<m.t.size(); ii++) {
     for(int jj=0; jj<3; jj++) {
-
+        double val;
         if(jj==axis) {
-          b[idx]=wI;
+          val=wI;
         } else {
-          b[idx]=0;
+          val=0;
         }
-        idx++;
+        bb.push_back(val);
       }
     }
   }
@@ -194,7 +200,7 @@ int find(int * a,int b,  size_t size)
 original vertices*/
 #include <set>
 float vW=30;
-void vertex_mat(Mesh &m , float vW0, CCS& ccs , double * bb)
+void vertex_mat(Mesh &m , float vW0, CCS& ccs , std::vector<double> & bb)
 {
   //weight for vertices at the intersection of at least three clusters
   //weight for regular vertices is 1
@@ -219,7 +225,7 @@ void vertex_mat(Mesh &m , float vW0, CCS& ccs , double * bb)
       size_t cur = ii;
       while(found) {
         found =0 ;
-        for (size_t nbr = 0; nbr<m.adjMat[ii].size(); nbr++) {
+        for (size_t nbr = 0; nbr<m.adjMat[cur].size(); nbr++) {
           size_t nbrIdx = m.adjMat[cur][nbr];
           if(nbrIdx==prev || nbrIdx == ii) {
             continue;
@@ -246,12 +252,11 @@ void vertex_mat(Mesh &m , float vW0, CCS& ccs , double * bb)
 
     }
   }
-  int bidx=0;
   for(int axis=0; axis<3; axis++) {
 
   for(size_t idx=0;idx<m.v.size();idx++){
-    real f;
-    std::map<int,real>val;
+    real_t f;
+    std::map<int,real_t>val;
     if(important[idx]){
       f=vW*vW0;
     } else {
@@ -259,8 +264,8 @@ void vertex_mat(Mesh &m , float vW0, CCS& ccs , double * bb)
     }
     val[idx]=f;
     addrow(val,ccs,axis*nvar);
-    bb[bidx]=f*m.v0[idx][axis];
-    bidx++;
+    bb.push_back(f*m.v0[idx][axis]);
+
   }
   }
 }
@@ -295,14 +300,14 @@ void array2vertex(const double * x, Mesh &m)
       idx++;
     }
   }
-  m.self_intersect();
+ /* m.self_intersect();
   std::map<int,bool>::iterator it;
   for(it = m.bad.begin();it!=m.bad.end();it++){
     for(int ii=0;ii<3;ii++){
       int vidx=m.t[it->first][ii];
       m.v[vidx]=v0[vidx];
     }
-  }
+  }*/
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)
@@ -324,15 +329,27 @@ void printAB(CCS&ccs, std::vector<double > & b, const double *x)
   out.close();
 }
 
-  float wS=0.1;
-  float wI=0.1;
-  float wV0=1;
-  float wPt=2;
+void vert_smooth_mat(Mesh & m,
+                float wS, CCS&ccs, std::vector<double >&bb)
+{
+  std::vector<Vec3> nbrPos(m.v.size());
+  avgNbrPos(m,nbrPos);
+
+  for(int axis=0; axis<3; axis++) {
+  for(size_t idx=0;idx<m.v.size();idx++){
+
+    std::map<int,real>val;
+    val[idx]=wS;
+    addrow(val,ccs,axis*nvar);
+    bb.push_back(nbrPos[idx][axis]);
+  }
+  }
+}
 
 //static int iter=0;
 void cgd(Mesh & m)
 {
-  int height=20*m.t.size()+3*m.v.size();
+  int height=11*m.t.size()+6*m.v.size();
 //  int height=2*m.t.size()+3*m.v.size();
 //  int width = 3*(m.v.size());
   int width = 3*(m.v.size()+m.t.size());
@@ -345,19 +362,19 @@ void cgd(Mesh & m)
   vmat(m,mat);
   m.adjlist();
   CCS ccs;
-  std::vector<double >b(height, 0.0);
+  std::vector<double >b;
   //b for smoothness matrix is 0
-  smooth_mat(m,mat,wS,ccs);
-  identity_mat(m, mat, wI, ccs , &b[9*m.t.size()] );
+  //smooth_mat(m,mat,wS,ccs);
+  vert_smooth_mat(m,wS,ccs,b);
+  identity_mat(m, mat, wI, ccs , b);
+  vertex_mat(m,wV0,ccs,b);
   planar_mat(m,plane,wPt,ccs);
-  vertex_mat(m,wV0,ccs,&b[20*m.t.size()]);
-//  vertex_mat(m,wV0,ccs,&b[2*m.t.size()]);
-
+  b.resize(height,0.0);
   SparseCCS* s = new SparseCCS(width, height, &ccs.vals[0], &ccs.rowInds[0], &ccs.colPtr[0]);
   SparseCCS* st = s->transposed();
   SparseCCS* sst=s->multiply_LM(*st);
   SparseMatrixOutline *outline = new SparseMatrixOutline(width);
-printAB(ccs,b,0);
+//printAB(ccs,b,0);
   double * ATb= s->operator* (&b[0]);
 
 //  int rowcnt=sst->rows_count();
@@ -396,13 +413,9 @@ printAB(ccs,b,0);
 }
 
 float wN=1,wP=1,w0=1,wV=1;
-
-void weighted_avg(Mesh& m)
+void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
 {
   std::vector<int>cnt(m.v.size());
-  std::vector<Vec3>nbrPos(m.v.size());
-  std::vector<Vec3> projPos(m.v.size());
-
   for(size_t ii=0;ii<m.t.size();ii++){
     Vec3 sum;
     for(int jj=0;jj<3;jj++){
@@ -418,8 +431,16 @@ void weighted_avg(Mesh& m)
     nbrPos[ii]/=cnt[ii];
     cnt[ii]=0;
   }
+}
 
+void weighted_avg(Mesh& m)
+{
+  std::vector<int>cnt(m.v.size());
+  std::vector<Vec3> projPos(m.v.size());
+  std::vector<Vec3>nbrPos(m.v.size());
   std::vector<Plane> plane;
+
+  avgNbrPos(m,nbrPos);
   m.get_normal_center();
   get_plane(m,plane);
   //--------

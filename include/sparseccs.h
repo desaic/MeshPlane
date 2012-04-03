@@ -32,8 +32,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <cstdlib>
-
-typedef double real;
+#include "math.hpp"
+typedef real_t real;
 
 class SparseCCS
 {

@@ -12,6 +12,7 @@
 #include "mesh_query.h"
 #include <map>
 #include <sstream>
+
 struct Edge {
   std::pair<int,int >e;
   Edge(int a=0, int b=0 ) {
@@ -27,6 +28,35 @@ struct Edge {
     return e==_e.e;
   }
 };
+
+struct LabeledEdge{
+  std::pair<int,int >e;
+  int label;
+  LabeledEdge(int a=0, int b=0 , int _label=0) :
+  label(_label){
+    if(a>b) {
+      int tmp =a;
+      a=b;
+      b=tmp;
+    }
+    e.first=a;
+    e.second=b;
+  }
+  bool operator<(const LabeledEdge& _e)const{
+    if(e < _e.e){
+      return true;
+    }
+    if(e>_e.e){
+      return false;
+    }
+    if(label<_e.label){
+      return true;
+    }
+    return false;
+  }
+};
+
+
 class EdgeCmp {
 public:
   bool operator()(const Edge & a, const Edge & b) {
@@ -135,17 +165,19 @@ void findEdge(int va, int vb, std::vector<Trig>& t,
     }
   }
 }
-
+#include <pthread.h>
+pthread_mutex_t meshm = PTHREAD_MUTEX_INITIALIZER;
 #include <set>
 void Mesh::compute_plane()
 {
   std::vector<bool>processed(t.size());
   std::vector<std::vector< int > > vtlist(v.size());
   std::vector<std::set<int> > vlabel(v.size());
-// std::vector< std::vector<std::vector<int> > > lines();
-  lines.resize(nLabel);
+  std::set<LabeledEdge> edgeVisited;
+  std::vector< std::vector<std::vector<int> > > local_lines(nLabel);
+ // lines.resize(nLabel);
   for(int ii=0;ii<nLabel;ii++){
-    lines[ii].resize(0);
+    local_lines[ii].resize(0);
   }
 //  std::vector<Plane> planes;
   for(size_t ii=0; ii<t.size(); ii++) {
@@ -192,9 +224,12 @@ void Mesh::compute_plane()
     std::vector<int> vertlist;
     int next = cur;
     int v0=cur;
-
+//  int prevTidx=ii;
     while(1) {
-      if(vlabel[cur].size()>2) {
+      if(vlabel[cur].size()>2){// || adjMat[prevTidx].size()<3) {
+        if(vertlist.size()>10000){
+          std::cout<<"debug";
+        }
         vertlist.push_back(cur);
       }
       bool foundBd = false;
@@ -209,7 +244,10 @@ void Mesh::compute_plane()
               || vlabel[nbrVidx].size()<2) {
             continue;
           }
-
+          LabeledEdge le (cur, nbrVidx, label);
+          if(edgeVisited.find(le)!=edgeVisited.end()){
+            continue;
+          }
           findEdge(cur,nbrVidx,t,vtlist,wings);
           if(t[wings[0]].label==t[wings[1]].label) {
             continue;
@@ -217,6 +255,8 @@ void Mesh::compute_plane()
           foundBd=true;
           next = nbrVidx;
           processed[nbrTidx]=true;
+          edgeVisited.insert(le);
+          //prevTidx=nbrTidx;
           break;
         }
         if(foundBd) {
@@ -230,9 +270,14 @@ void Mesh::compute_plane()
       cur = next;
     }
     if(vertlist.size()>2) {
-      lines[label].push_back(vertlist);
+      local_lines[label].push_back(vertlist);
+
     }
   }
+
+  pthread_mutex_lock(&meshm);
+  lines = local_lines;
+  pthread_mutex_unlock(&meshm);
 }
 
 void Mesh::save_plane(const char * filename)
@@ -439,6 +484,8 @@ void Mesh::drawLines()
   glDisable(GL_LIGHTING);
   glBegin(GL_LINES);
   glColor3f(1.0,0.5,0.5);
+  pthread_mutex_lock(&meshm);
+
   for(size_t ii=0; ii<lines.size(); ii++) {
 
     for(size_t jj=0; jj<lines[ii].size(); jj++) {
@@ -464,7 +511,7 @@ void Mesh::drawLines()
       }
     }
   }
-
+  pthread_mutex_unlock(&meshm);
   glEnd();
   glEnable(GL_LIGHTING);
 }
@@ -568,7 +615,7 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
 
   for(int ii=0; ii<m.nLabel; ii++) {
     plane[ii].c/=cnt[ii];
-    plane[ii].n/=cnt[ii];
+   // plane[ii].n/=cnt[ii];
     plane[ii].n/=plane[ii].n.norm();
   }
 }
