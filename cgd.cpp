@@ -6,10 +6,11 @@
 
 #include <fstream>
 
-float wS=0.1;
+float wS=10;
 float wI=0.1;
 float wV0=0.1;
-float wPt=5;
+float wPt=0;
+float wN=10,wP=0.1,w0=1,wV=1;
 
 void avgNbrPos(Mesh & m, std::vector<Vec3> & nbrPos);
 void add_v4(Mesh & m )
@@ -300,7 +301,8 @@ void array2vertex(const double * x, Mesh &m)
       idx++;
     }
   }
- /* m.self_intersect();
+  /*
+  m.self_intersect();
   std::map<int,bool>::iterator it;
   for(it = m.bad.begin();it!=m.bad.end();it++){
     for(int ii=0;ii<3;ii++){
@@ -341,7 +343,7 @@ void vert_smooth_mat(Mesh & m,
     std::map<int,real>val;
     val[idx]=wS;
     addrow(val,ccs,axis*nvar);
-    bb.push_back(nbrPos[idx][axis]);
+    bb.push_back(wS*nbrPos[idx][axis]);
   }
   }
 }
@@ -398,7 +400,7 @@ void cgd(Mesh & m)
   vertex2arr(m,x);
 
   double eps = 1E-9;
-  int maxIter = 500;
+  int maxIter = 20;
   int verbose = 0;
   int ret = solver.SolveLinearSystemWithJacobiPreconditioner(x, ATb, eps, maxIter, verbose);//
   if(ret<0) {
@@ -412,7 +414,7 @@ void cgd(Mesh & m)
   delete []ATb;
 }
 
-float wN=1,wP=1,w0=1,wV=1;
+
 void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
 {
   std::vector<int>cnt(m.v.size());
@@ -429,7 +431,6 @@ void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
   std::vector<Vec3> v0 = m.v;
   for(size_t ii=0;ii<m.v.size();ii++){
     nbrPos[ii]/=cnt[ii];
-    cnt[ii]=0;
   }
 }
 

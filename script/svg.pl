@@ -8,9 +8,9 @@ if($#ARGV<1){
 my $colWidth=5;
 my $row=0;
 my $col=0;
-my $scale=800;
+my $scale=1000;
 my $spreadscale=400;
-my $width=1500;
+my $width=1800;
 open OUT,">" ,$ARGV[1];
 print OUT "<svg>\n";
 open IN,"<",$ARGV[0];
@@ -24,9 +24,10 @@ $spread[1]=$top;
 for (my $ii=0;$ii<$nLines;$ii++){
     my $nseg=<IN>;
     if($nseg>0){
-        print OUT "<g>\n";
-      
-    }
+        print OUT "<g>\n";      
+    }#else{
+      #  next;
+   # }
     for(my $jj=0;$jj<$nseg;$jj++){
         my $npt = <IN>;
         my $line = <IN>;

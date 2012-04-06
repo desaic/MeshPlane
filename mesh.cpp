@@ -168,6 +168,12 @@ void findEdge(int va, int vb, std::vector<Trig>& t,
 #include <pthread.h>
 pthread_mutex_t meshm = PTHREAD_MUTEX_INITIALIZER;
 #include <set>
+
+bool isOnEdge(int vidx, std::vector<std::vector<int > > & adjMat,
+              std::vector<std::vector<int > > & vtlist)
+{
+  return false;
+}
 void Mesh::compute_plane()
 {
   std::vector<bool>processed(t.size());
@@ -226,7 +232,7 @@ void Mesh::compute_plane()
     int v0=cur;
 //  int prevTidx=ii;
     while(1) {
-      if(vlabel[cur].size()>2){// || adjMat[prevTidx].size()<3) {
+      if(vlabel[cur].size()>2|| isOnEdge(cur,adjMat, vtlist)){
         if(vertlist.size()>10000){
           std::cout<<"debug";
         }
@@ -435,7 +441,7 @@ void Mesh::draw(std::vector<Vec3>&v)
 
     glColor3f(color[l][0],color[l][1],color[l][2]);
 
-    Vec3 a = v[t[ii][0]] - v[t[ii][1]];
+    Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
     b= b/b.norm();
@@ -450,6 +456,14 @@ void Mesh::draw(std::vector<Vec3>&v)
     glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
     //glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
     glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+
+    if(t[ii].label==highlight){
+      glVertex3f(v[t[ii][0]][0]+b.x[0],v[t[ii][0]][1]+b.x[1],v[t[ii][0]][2]+b.x[2]);
+
+      glVertex3f(v[t[ii][1]][0]+b.x[0],v[t[ii][1]][1]+b.x[1],v[t[ii][1]][2]+b.x[2]);
+
+      glVertex3f(v[t[ii][2]][0]+b.x[0],v[t[ii][2]][1]+b.x[1],v[t[ii][2]][2]+b.x[2]);
+    }
 
   }
   glEnd();
@@ -483,7 +497,7 @@ void Mesh::drawLines()
 {
   glDisable(GL_LIGHTING);
   glBegin(GL_LINES);
-  glColor3f(1.0,0.5,0.5);
+  glColor3f(0.9,0.9,0.4);
   pthread_mutex_lock(&meshm);
 
   for(size_t ii=0; ii<lines.size(); ii++) {

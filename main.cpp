@@ -198,15 +198,15 @@ void animate(int t)
 #include "cgd.hpp"
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=100;
+  int ITER=50;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  wS=1;
+  wS=30;
   wI=1;
-  wV0=1;
-  wPt=1;
+  wV0=200;
+  wPt=0.5;
 
-  vW=10;
+  vW=30;
   dataCostW=300;
   smoothW=100;
 	distw=1;
@@ -214,17 +214,18 @@ void* iterate(void* arg){
   m->compute_plane();
 
   for(int ii=0;ii<ITER;ii++){
-    wPt+=2;
+    wPt+=1;
     printf("iter %d\n",ii);
     runMincut(*m);
     m->compute_plane();
     cgd(*m);
+//    weighted_avg(*m);
   }
   wPt=2000;
   cgd(*m);
   m->save("planar_output.ply2");
 
-  //m->save_plane("bunny_plane.txt");
+  m->save_plane("plane.txt");
   return 0;
 }
 #include <iostream>
@@ -259,20 +260,26 @@ int main(int argc, char** argv)
   glutKeyboardFunc(keyboard);
   glutTimerFunc(0.1, animate, 0);
   int nLabel=50;
+  bool run=false;
   for(int ii=0;ii<argc;ii++){
     if(strcmp(argv[ii], "-k")==0){
       ii++;
       nLabel=atoi(argv[ii]);
     }
+    if(strcmp(argv[ii],"-r")==0){
+      ii++;
+      run=true;
+    }
   }
   m=new Mesh (argv[1],nLabel);
   minc_nlabel=nLabel;
   m->compute_plane();
-  m->save_plane("plane.txt");
-  pthread_t thread;
-  pthread_create(&thread, 0, iterate,(void*)m);
-  pthread_detach(thread);
-
+  //m->save_plane("plane.txt");
+  if(run){
+    pthread_t thread;
+    pthread_create(&thread, 0, iterate,(void*)m);
+    pthread_detach(thread);
+  }
   pthread_t hlthread;
   pthread_create(&hlthread,0,scanHighlight,(void*)m);
   pthread_detach(hlthread);
