@@ -13,6 +13,16 @@
 #include <map>
 #include <sstream>
 
+bool contains(int * a ,  int x, size_t size)
+{
+  for(size_t ii=0;ii<size;ii++){
+    if(a[ii]==x){
+      return true;
+    }
+  }
+  return false;
+}
+
 struct Edge {
   std::pair<int,int >e;
   Edge(int a=0, int b=0 ) {
@@ -170,12 +180,76 @@ pthread_mutex_t meshm = PTHREAD_MUTEX_INITIALIZER;
 #include <set>
 
 bool isOnEdge(int vidx, std::vector<std::vector<int > > & adjMat,
-              std::vector<std::vector<int > > & vtlist)
+              std::vector<std::vector<int > > & vtlist,
+              std::vector<Trig > & t)
 {
+  int prevT=vtlist[vidx][0];
+  for(size_t ii=1;ii<vtlist[vidx].size();ii++){
+    int tidx = vtlist[vidx][ii];
+    bool found = false;
+    int nbrTidx;
+    for(size_t jj=0;jj<adjMat[tidx].size();jj++){
+      nbrTidx=adjMat[tidx][jj];
+      if(nbrTidx==prevT){
+        continue;
+      }
+      if(contains(t[nbrTidx].x, vidx,3)){
+        found = true;
+        break;
+      }
+    }
+    if(!found){
+      return true;
+    }
+    prevT=nbrTidx;
+  }
   return false;
 }
+
+void Mesh::fix_inner_cluster()
+{
+  std::vector<bool>processed(t.size());
+  //all clusters inside another single cluster is merged into the outer cluster
+  for(size_t ii=0;ii<t.size();ii++){
+    if(processed[ii]){
+      continue;
+    }
+    std::map<int,bool>nbrSet;
+    std::vector<int> que;
+    size_t front = 0;
+    que.push_back(ii);
+    int label=t[ii].label;
+    while(front<que.size()){
+      int idx=que[front];
+      front++;
+      processed[idx]=true;
+      for(size_t jj=0;jj<adjMat[idx].size();jj++){
+        int nbrIdx = adjMat[idx][jj];
+        if(t[nbrIdx].label!=label){
+          nbrSet[t[nbrIdx].label]=true;
+          continue;
+        }
+        if(processed[nbrIdx]){
+          continue;
+        }
+
+        que.push_back(nbrIdx);
+      }
+    }
+    if(nbrSet.size()==1){
+      label = nbrSet.begin()->first;
+      for(size_t jj=0;jj<que.size();jj++){
+        t[que[jj]].label=label;
+      }
+    }
+  }
+
+}
+
 void Mesh::compute_plane()
 {
+
+
   std::vector<bool>processed(t.size());
   std::vector<std::vector< int > > vtlist(v.size());
   std::vector<std::set<int> > vlabel(v.size());
@@ -185,6 +259,9 @@ void Mesh::compute_plane()
   for(int ii=0;ii<nLabel;ii++){
     local_lines[ii].resize(0);
   }
+
+  adjlist();
+  fix_inner_cluster();
 //  std::vector<Plane> planes;
   for(size_t ii=0; ii<t.size(); ii++) {
     for(int jj=0; jj<3; jj++) {
@@ -193,9 +270,10 @@ void Mesh::compute_plane()
       vlabel[vidx].insert(t[ii].label);
     }
   }
-  adjlist();
   get_normal_center();
+
   randcenter(*this, planes, nLabel);
+
   int wings[2];
   for(size_t ii=0; ii<t.size(); ii++) {
     if(processed[ii]) {
@@ -205,7 +283,6 @@ void Mesh::compute_plane()
     int boundary= false;
     int prev=t[ii][0], cur;
     int label = t[ii].label;
-
     for(size_t jj=0; jj<adjMat[ii].size();jj++) {
       int nbrIdx = adjMat [ii][jj];
       if(t[nbrIdx].label!=label) {
@@ -223,6 +300,17 @@ void Mesh::compute_plane()
         break;
       }
     }
+
+    if(adjMat[ii].size()<3){
+      boundary=true;
+      for(int jj=0;jj<3;jj++){
+        if(isOnEdge(t[ii][jj],adjMat,vtlist, t)){
+          cur = t[ii][jj];
+          break;
+        }
+      }
+    }
+
     if(!boundary) {
       continue;
     }
@@ -230,12 +318,13 @@ void Mesh::compute_plane()
     std::vector<int> vertlist;
     int next = cur;
     int v0=cur;
+    if(label==0){
+      std::cout<<"debug\n";
+    }
+
 //  int prevTidx=ii;
     while(1) {
-      if(vlabel[cur].size()>2|| isOnEdge(cur,adjMat, vtlist)){
-        if(vertlist.size()>10000){
-          std::cout<<"debug";
-        }
+      if(vlabel[cur].size()>2 || isOnEdge(cur,adjMat, vtlist,t) ){
         vertlist.push_back(cur);
       }
       bool foundBd = false;
@@ -291,6 +380,7 @@ void Mesh::save_plane(const char * filename)
   std::ofstream out;
   out.open(filename);
   out<<lines.size()<<"\n";
+
   for(size_t ii=0; ii<lines.size(); ii++) {
     out<<lines[ii].size()<<"\n";
     if(lines[ii].size()<1){
@@ -309,7 +399,12 @@ void Mesh::save_plane(const char * filename)
     ax/=ax.norm();
     ay=n.cross(ax);
     ay/=ay.norm();
-
+    out<<n.x[0]<<" "<<n.x[1]<<" "<<n.x[2]<<"\n";
+    //save transformation from world coordinates to plane coordinates
+    //normal is z axis
+    out<<ax.x[0]<<" "<<ax.x[1]<<" "<<ax.x[2]<<"\n";
+    out<<ay.x[0]<<" "<<ay.x[1]<<" "<<ay.x[2]<<"\n";
+    out<<v0.x[0]<<" "<<v0.x[1]<<" "<<v0.x[2]<<"\n";
     for(size_t jj=0; jj<lines[ii].size(); jj++) {
       out<<lines[ii][jj].size()<<"\n";
       for(size_t kk=0; kk<lines[ii][jj].size(); kk++) {
@@ -317,6 +412,10 @@ void Mesh::save_plane(const char * filename)
         float x = (d.dot(ax));
         float y = (d.dot(ay));
         out<<x<<","<<y<<" ";
+      }
+      out<<"\n";
+      for(size_t kk=0; kk<lines[ii][jj].size(); kk++) {
+        out<<lines[ii][jj][kk]<<" ";
       }
       out<<"\n";
     }
@@ -464,7 +563,6 @@ void Mesh::draw(std::vector<Vec3>&v)
 
       glVertex3f(v[t[ii][2]][0]+b.x[0],v[t[ii][2]][1]+b.x[1],v[t[ii][2]][2]+b.x[2]);
     }
-
   }
   glEnd();
 

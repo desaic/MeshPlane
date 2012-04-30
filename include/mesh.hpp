@@ -46,6 +46,8 @@ public:
   void compute_plane();
 private:
   void compute_norm();
+  void fix_inner_cluster();
+
   std::vector<Vec3>color;
   std::vector< std::vector<std::vector<int> > > lines;
 

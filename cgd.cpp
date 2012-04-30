@@ -5,7 +5,7 @@
 #include "CGSolver.h"
 
 #include <fstream>
-
+#include <set>
 float wS=10;
 float wI=0.1;
 float wV0=0.1;
@@ -13,6 +13,7 @@ float wPt=0;
 float wN=10,wP=0.1,w0=1,wV=1;
 
 void avgNbrPos(Mesh & m, std::vector<Vec3> & nbrPos);
+void vertAdjList(Mesh& m, std::vector<std::set<int> > & vadj);
 void add_v4(Mesh & m )
 {
   m.v4.resize(m.t.size());
@@ -199,7 +200,7 @@ int find(int * a,int b,  size_t size)
 
 /**@brief transformed vertices should stay close to
 original vertices*/
-#include <set>
+
 float vW=30;
 void vertex_mat(Mesh &m , float vW0, CCS& ccs , std::vector<double> & bb)
 {
@@ -301,7 +302,7 @@ void array2vertex(const double * x, Mesh &m)
       idx++;
     }
   }
-  /*
+/*
   m.self_intersect();
   std::map<int,bool>::iterator it;
   for(it = m.bad.begin();it!=m.bad.end();it++){
@@ -309,7 +310,8 @@ void array2vertex(const double * x, Mesh &m)
       int vidx=m.t[it->first][ii];
       m.v[vidx]=v0[vidx];
     }
-  }*/
+  }
+*/
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)
@@ -334,16 +336,31 @@ void printAB(CCS&ccs, std::vector<double > & b, const double *x)
 void vert_smooth_mat(Mesh & m,
                 float wS, CCS&ccs, std::vector<double >&bb)
 {
-  std::vector<Vec3> nbrPos(m.v.size());
-  avgNbrPos(m,nbrPos);
+  //std::vector<Vec3> nbrPos(m.v.size());
+  //avgNbrPos(m,nbrPos);
+  std::vector<std::set<int> > vadj;
+  vertAdjList(m,vadj);
 
   for(int axis=0; axis<3; axis++) {
   for(size_t idx=0;idx<m.v.size();idx++){
 
+/*
     std::map<int,real>val;
     val[idx]=wS;
     addrow(val,ccs,axis*nvar);
     bb.push_back(wS*nbrPos[idx][axis]);
+    */
+    std::map<int,real>val;
+    val[idx]=wS;
+    std::set<int>::iterator it;
+    std::set<int> &neibors=vadj[idx];
+    size_t n_neibor=neibors.size();
+    for(it = neibors.begin();it!=neibors.end();it++){
+      int nbrIdx= (*it);
+      val[nbrIdx]=-wS/n_neibor;
+    }
+    addrow(val,ccs,axis*nvar);
+    bb.push_back(0);
   }
   }
 }
@@ -414,6 +431,22 @@ void cgd(Mesh & m)
   delete []ATb;
 }
 
+void vertAdjList(Mesh& m, std::vector<std::set<int> > & vadj)
+{
+  vadj.resize(m.v.size());
+  for(size_t ii=0;ii<m.t.size();ii++){
+    for(int jj=0;jj<3;jj++){
+      int vj=m.t[ii][jj];
+      for(int kk=0;kk<3;kk++){
+        if(jj==kk){
+          continue;
+        }
+        int vk = m.t[ii][kk];
+        vadj[vj].insert(vk);
+      }
+    }
+  }
+}
 
 void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
 {

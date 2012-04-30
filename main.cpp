@@ -198,19 +198,19 @@ void animate(int t)
 #include "cgd.hpp"
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=50;
+    int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
   wS=30;
   wI=1;
-  wV0=200;
+  wV0=1;
   wPt=0.5;
 
   vW=30;
   dataCostW=300;
-  smoothW=100;
+  smoothW=200;
 	distw=1;
-	BP bp(*m);
+  BP bp(*m);
   m->compute_plane();
 
   for(int ii=0;ii<ITER;ii++){
@@ -220,7 +220,7 @@ void* iterate(void* arg){
     m->compute_plane();
     cgd(*m);
 //    weighted_avg(*m);
-  }
+}
   wPt=2000;
   cgd(*m);
   m->save("planar_output.ply2");
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
   m=new Mesh (argv[1],nLabel);
   minc_nlabel=nLabel;
   m->compute_plane();
-  //m->save_plane("plane.txt");
+  m->save_plane("plane.txt");
   if(run){
     pthread_t thread;
     pthread_create(&thread, 0, iterate,(void*)m);

@@ -25,12 +25,14 @@ for (my $ii=0;$ii<$nLines;$ii++){
     my $nseg=<IN>;
     if($nseg>0){
         print OUT "<g>\n";      
+        <IN>;#normal
     }#else{
       #  next;
    # }
     for(my $jj=0;$jj<$nseg;$jj++){
         my $npt = <IN>;
         my $line = <IN>;
+        <IN>;#vertex indices
         my @toks = split /\s+/, $line;
         print OUT '<path stroke-width="1px" fill="none" stroke="#000000"';
         my @mn=(10,10);
@@ -89,11 +91,11 @@ for (my $ii=0;$ii<$nLines;$ii++){
         }
         $center[0]-=15;
         print OUT "<text x=\"$center[0]\" y=\"$center[1]\"\n"; 
-        print OUT "font-family=\"Verdana\" font-size=\"30\" fill=\"blue\" >\n";
-        print OUT "$pathid\n</text>\n";
+        print OUT "font-family=\"Arial\" font-size=\"30\" fill=\"blue\" >\n";
+        print OUT "$ii\n</text>\n";
         print OUT "</g>\n";
-
         $pathid++;
+
     }
     <IN>;
 }
