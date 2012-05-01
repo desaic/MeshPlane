@@ -22,13 +22,14 @@ void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
   float mx = -1;
   for (unsigned int ii=0;ii<m.t.size();ii++){
     datac[ii].resize(nLabel);
+    real_t area=m.area(m.t[ii]);
     for (int jj =0 ;jj<nLabel;jj++){
       Vec3 plane_d = plane[jj].n.dot(plane[jj].c);
       Vec3 d = m.t[ii].c.dot(plane[jj].c);
       float cost = distw * (plane_d-d).L1n();
       cost += (m.t[ii].n- plane[jj].n).L1n();
       cost /= (1+distw);
-      datac[ii][jj]=cost;
+      datac[ii][jj]=area*cost;
       if(mn<0 || mn>cost){
 	mn=cost;
       }
@@ -51,7 +52,6 @@ float distance( Trig & a, Trig &b)
   float d = (a.n-b.n).L1n();
   return d;
 }
-
 /**@param smoothc smoothc[i][j] is the smoothness cost for
    vertices i and j. i < j.
  */
@@ -62,12 +62,14 @@ void smooth_cost(Mesh& m,
   float mx = -1;
 
   for(unsigned int ii=0;ii< m.t.size();ii++){
+    real_t area1=m.area(m.t[ii]);
     for(unsigned int nbr=0;nbr<m.adjMat[ii].size();nbr++ ){
       unsigned int nbrIdx = m.adjMat[ii][nbr];
       if(nbrIdx<ii){
-	continue;
+	      continue;
       }
-      float cost = distance( m.t[ii], m.t[nbrIdx]);
+      real_t area2=m.area(m.t[nbrIdx]);
+      float cost = (area1+area2)*distance( m.t[ii], m.t[nbrIdx]);
       cost = 1/(1+cost);
       smoothc[std::make_pair(ii,nbrIdx)]=cost;
       if(mn<0 || mn>cost){

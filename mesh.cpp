@@ -374,7 +374,11 @@ void Mesh::compute_plane()
   lines = local_lines;
   pthread_mutex_unlock(&meshm);
 }
-
+real_t Mesh::area(const Trig & trig)
+{
+  Vec3 n=(v[trig[1]]-v[trig[0]]).cross(v[trig[2]]-v[trig[0]]);
+  return n.norm()/2;
+}
 void Mesh::save_plane(const char * filename)
 {
   std::ofstream out;

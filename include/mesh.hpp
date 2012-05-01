@@ -6,9 +6,10 @@
 struct Trig{
   Trig(){x[0]=0;x[1]=0;x[2]=0;x[3]=0;}
   int & operator[](const int i) {return x[i];}
+  int operator[](const int i)const {return x[i];}
   int x[4];
   int label;
-  Vec3 n,c;
+  Vec3 n,c,a;
 };
 
 
@@ -39,7 +40,7 @@ public:
   void save(const char * filename);
   void save_plane(const char * filename);
   bool has_v4;
-
+  real_t area(const Trig & trig);
   void get_normal_center();
   std::vector<Plane>planes;
   int highlight;

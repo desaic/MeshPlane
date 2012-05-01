@@ -3,11 +3,11 @@
 #endif
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <GL/freeglut.h>
 #include <cmath>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/freeglut.h>
 #include "mesh.hpp"
 #include "poly.hpp"
 #include "mincut.hpp"
@@ -207,8 +207,8 @@ void* iterate(void* arg){
   wPt=0.5;
 
   vW=30;
-  dataCostW=300;
-  smoothW=200;
+  dataCostW=300000;
+  smoothW=20;
 	distw=1;
   BP bp(*m);
   m->compute_plane();
