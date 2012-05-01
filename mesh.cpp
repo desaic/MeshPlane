@@ -232,7 +232,7 @@ void Mesh::fix_inner_cluster()
         if(processed[nbrIdx]){
           continue;
         }
-
+        processed[nbrIdx]=true;
         que.push_back(nbrIdx);
       }
     }
@@ -248,8 +248,6 @@ void Mesh::fix_inner_cluster()
 
 void Mesh::compute_plane()
 {
-
-
   std::vector<bool>processed(t.size());
   std::vector<std::vector< int > > vtlist(v.size());
   std::vector<std::set<int> > vlabel(v.size());
@@ -550,14 +548,12 @@ void Mesh::draw(std::vector<Vec3>&v)
     b= b/b.norm();
 
     glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
-    //glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
-    glNormal3f(b.x[0],b.x[1],b.x[2]);
-
-
+    glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
+    //glNormal3f(b.x[0],b.x[1],b.x[2]);
     glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
-    //glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
+    glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
     glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
-    //glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
+    glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
     glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
 
     if(t[ii].label==highlight){

@@ -33,7 +33,7 @@ void init(void)
 {
   glClearColor (0.2, 0.4, 0.9, 0.0);
   // glShadeModel (GL_SMOOTH);
-  glShadeModel (GL_FLAT );
+  //glShadeModel (GL_FLAT );
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHT1);
