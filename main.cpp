@@ -207,8 +207,8 @@ void* iterate(void* arg){
   wPt=0.5;
 
   vW=30;
-  dataCostW=300000;
-  smoothW=20;
+  dataCostW=30000000;
+  smoothW=300;
 	distw=1;
   BP bp(*m);
   m->compute_plane();
@@ -217,6 +217,7 @@ void* iterate(void* arg){
     wPt+=1;
     printf("iter %d\n",ii);
     runMincut(*m);
+    printf("cut\n");
     m->compute_plane();
     cgd(*m);
 //    weighted_avg(*m);
@@ -272,6 +273,8 @@ int main(int argc, char** argv)
     }
   }
   m=new Mesh (argv[1],nLabel);
+  m->load_ptex("bull.ptx");
+  m->load_tex("../bunny_tex1.png");
   minc_nlabel=nLabel;
   m->compute_plane();
   m->save_plane("plane.txt");

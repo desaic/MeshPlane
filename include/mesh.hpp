@@ -1,7 +1,10 @@
 #ifndef MESH_H
 #define MESH_H
 #include <vector>
+#include <fstream>
 #include "math.hpp"
+#include "Ptexture.h"
+#include <GL/gl.h>
 //by default counterclockwise winding is front face
 struct Trig{
   Trig(){x[0]=0;x[1]=0;x[2]=0;x[3]=0;}
@@ -26,6 +29,7 @@ public:
   std::map<int,bool>bad;
   bool self_intersect();
   std::vector<Vec3>v;
+  std::vector<Vec3>tex;
   std::vector<Vec3>v0;
   std::vector<Trig>t;
   std::vector<Vec3>n;
@@ -45,13 +49,18 @@ public:
   std::vector<Plane>planes;
   int highlight;
   void compute_plane();
+  void read_ply(std::ifstream & f);
+  void read_ply2(std::ifstream & f);
+  void load_tex(const char * filename);
+  void load_ptex(const char * filename);
 private:
   void compute_norm();
   void fix_inner_cluster();
-
+  PtexTexture *ptx;
   std::vector<Vec3>color;
   std::vector< std::vector<std::vector<int> > > lines;
-
+  GLuint texture;
+  unsigned char * tex_buf;
 };
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
 /**@param m assume triangle norms and centers are already computed

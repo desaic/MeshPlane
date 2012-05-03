@@ -12,7 +12,8 @@
 #include "mesh_query.h"
 #include <map>
 #include <sstream>
-
+#include <string.h>
+#include "imageio.h"
 bool contains(int * a ,  int x, size_t size)
 {
   for(size_t ii=0;ii<size;ii++){
@@ -209,6 +210,7 @@ bool isOnEdge(int vidx, std::vector<std::vector<int > > & adjMat,
 void Mesh::fix_inner_cluster()
 {
   std::vector<bool>processed(t.size());
+  printf("0\n");
   //all clusters inside another single cluster is merged into the outer cluster
   for(size_t ii=0;ii<t.size();ii++){
     if(processed[ii]){
@@ -243,7 +245,7 @@ void Mesh::fix_inner_cluster()
       }
     }
   }
-
+  printf("1\n");
 }
 
 void Mesh::compute_plane()
@@ -253,14 +255,12 @@ void Mesh::compute_plane()
   std::vector<std::set<int> > vlabel(v.size());
   std::set<LabeledEdge> edgeVisited;
   std::vector< std::vector<std::vector<int> > > local_lines(nLabel);
- // lines.resize(nLabel);
   for(int ii=0;ii<nLabel;ii++){
     local_lines[ii].resize(0);
   }
 
   adjlist();
   fix_inner_cluster();
-//  std::vector<Plane> planes;
   for(size_t ii=0; ii<t.size(); ii++) {
     for(int jj=0; jj<3; jj++) {
       int vidx=t[ii][jj];
@@ -317,7 +317,7 @@ void Mesh::compute_plane()
     int next = cur;
     int v0=cur;
     if(label==0){
-      std::cout<<"debug\n";
+//      std::cout<<"debug\n";
     }
 
 //  int prevTidx=ii;
@@ -364,7 +364,6 @@ void Mesh::compute_plane()
     }
     if(vertlist.size()>2) {
       local_lines[label].push_back(vertlist);
-
     }
   }
 
@@ -377,6 +376,30 @@ real_t Mesh::area(const Trig & trig)
   Vec3 n=(v[trig[1]]-v[trig[0]]).cross(v[trig[2]]-v[trig[0]]);
   return n.norm()/2;
 }
+void Mesh::load_tex(const char * filename){
+  int width,height;
+  unsigned char * buf = imageio_load_image(filename, &width,&height);
+  if(!buf){
+    return;
+  }
+  tex_buf=buf;
+  glEnable(GL_TEXTURE_2D);
+  glGenTextures(1,&texture);
+  glBindTexture( GL_TEXTURE_2D, texture );
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_LUMINANCE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+			 width,  height,  0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+}
+void Mesh::load_ptex(const char * filename)
+{
+  Ptex::String errMsg("cannot open ptx\n");
+  ptx=PtexTexture::open(filename,errMsg);
+}
+
 void Mesh::save_plane(const char * filename)
 {
   std::ofstream out;
@@ -426,15 +449,75 @@ void Mesh::save_plane(const char * filename)
   out.close();
 }
 
-Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel),highlight(0)
+void Mesh::read_ply(std::ifstream & f)
 {
-  std::ifstream f ;
-  f.open(filename);
-  if(!f.is_open()) {
-    std::cout<<"cannot open "<<filename<<"\n";
-    return;
+  std::string line;
+  std::string vertLine("element vertex");
+  std::string faceLine("element face");
+  std::string texLine("property float s");
+  std::string endHeaderLine("end_header");
+  while(true){
+    std::getline(f,line);
+    if(std::string::npos!=line.find(vertLine)){
+      break;
+    }
   }
+  std::string token;
+  std::stringstream ss(line);
+  ss>>token>>token;
+  int nvert;
+  ss>>nvert;
+  bool hasTex=false;
+  while(true){
+    std::getline(f,line);
+    if(std::string::npos!=line.find(faceLine)){
+      break;
+    }
+    if(std::string::npos!=line.find(texLine)){
+      hasTex=true;
+    }
+  }
+  std::stringstream ss1(line);
+  ss1>>token>>token;
+  int nface;
+  ss1>>nface;
+  while(true){
+    std::getline(f,line);
+    if(std::string::npos!=line.find(endHeaderLine)){
+      break;
+    }
+  }
+
+  v.resize(nvert);
+  t.resize(nface);
+  if(hasTex){
+    tex.resize(nvert);
+  }
+  for (int ii =0; ii<nvert; ii++) {
+    for (int jj=0; jj<3; jj++) {
+      f>>v[ii][jj];
+    }
+    if(hasTex){
+      for (int jj=0; jj<2; jj++) {
+        f>>tex[ii][jj];
+      }
+      tex[ii][1]=1-tex[ii][1];;
+    }
+  }
+  for (int ii =0; ii<nface; ii++) {
+    int nidx;
+    f>>nidx;
+    t[ii].label=0;
+    for (int jj=0; jj<3; jj++) {
+      f>>t[ii][jj];
+    }
+  }
+  color.push_back(Vec3(1,1,1));
+  nLabel=1;
+}
+
+void Mesh::read_ply2(std::ifstream&f)
+{
   int nvert, ntrig;
   f>>nvert;
   f>>ntrig;
@@ -467,18 +550,38 @@ Mesh::Mesh(const char * filename, int _nLabel)
   }
   nLabel++;
 
+}
+Mesh::Mesh(const char * filename, int _nLabel)
+  :nLabel(_nLabel),highlight(100),ptx(0),tex_buf(0)
+{
+  std::ifstream f ;
+  f.open(filename);
+  if(!f.is_open()) {
+    std::cout<<"cannot open "<<filename<<"\n";
+    return;
+  }
+
+  if(filename[strlen(filename)-1]=='y'){
+    read_ply(f);
+  }
+  else{
+    read_ply2(f);
+    assign_color();
+
+  }
+
   real_t mn[3]= {1,1,1};
   real_t mx[3]= {-1,-1,-1};
 
   //scale and translate to [0 , 1]
   for (unsigned int dim = 0; dim<3; dim++) {
-    for( int ii=0; ii<nvert; ii++) {
+    for( size_t ii=0; ii<v.size(); ii++) {
       mn [dim]= std::min(v[ii][dim],mn[dim]);
       mx[dim] = std::max(v[ii][dim],mx[dim]);
     }
     real_t translate = -0.5*(mx[dim]+mn[dim]);
     //  translate = -mn[dim];
-    for(int ii=0; ii<nvert; ii++) {
+    for(size_t ii=0; ii<v.size(); ii++) {
       v[ii][dim]=(v[ii][dim]+translate);
     }
   }
@@ -488,14 +591,15 @@ Mesh::Mesh(const char * filename, int _nLabel)
     scale=std::min(1/(mx[dim]-mn[dim]),scale);
   }
 
-  for(int ii=0; ii<nvert; ii++) {
+  for(size_t ii=0; ii<v.size(); ii++) {
     for (unsigned int dim = 0; dim<3; dim++) {
       v[ii][dim]=v[ii][dim]*scale;
     }
   }
-  assign_color();
-  compute_norm();
   v0=v;
+  compute_norm();
+
+  f.close();
 }
 
 void Mesh::assign_color()
@@ -526,7 +630,6 @@ void Mesh::compute_norm()
 }
 void Mesh::draw(std::vector<Vec3>&v)
 {
-  //	glDisable(GL_LIGHTING);
 
   glBegin(GL_TRIANGLES);
   GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
@@ -536,26 +639,49 @@ void Mesh::draw(std::vector<Vec3>&v)
   glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
   GLfloat s=10;
   glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
+  if(tex_buf){
+    glBindTexture(GL_TEXTURE_2D,texture);
+  }
   for(unsigned int ii=0; ii<t.size(); ii++) {
     int l = t[ii].label;
+/*    if(ptx && (int)ii< ptx->numFaces()){
+      float ptxColor[4];
+      ptx->getPixel(ii,0,0,ptxColor,0,4);
+      glColor3f(ptxColor[0],ptxColor[1],ptxColor[2]);
+      GLfloat diffuse[4]= {ptxColor[0],ptxColor[1],ptxColor[2],1.0f};
+      glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+    }
+    else{
+  */
     GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
-
     glColor3f(color[l][0],color[l][1],color[l][2]);
+    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 
     Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
     b= b/b.norm();
+    if(tex_buf && tex.size()>0){
+      glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
+      glTexCoord2f(tex[t[ii][0]][0],tex[t[ii][0]][1]);
+      glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
 
-    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
-    glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
-    //glNormal3f(b.x[0],b.x[1],b.x[2]);
-    glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
-    glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
-    glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
-    glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
-    glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+      glTexCoord2f(tex[t[ii][1]][0],tex[t[ii][1]][1]);
+      glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
+      glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
 
+      glTexCoord2f(tex[t[ii][2]][0],tex[t[ii][2]][1]);
+      glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
+      glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+    }else{
+      glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
+      glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
+      glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
+      glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
+      glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
+      glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+
+    }
     if(t[ii].label==highlight){
       glVertex3f(v[t[ii][0]][0]+b.x[0],v[t[ii][0]][1]+b.x[1],v[t[ii][0]][2]+b.x[2]);
 
