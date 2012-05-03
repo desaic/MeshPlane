@@ -7,12 +7,13 @@
 #include <GL/gl.h>
 //by default counterclockwise winding is front face
 struct Trig{
-  Trig(){x[0]=0;x[1]=0;x[2]=0;x[3]=0;}
+  Trig():label(0){x[0]=0;x[1]=0;x[2]=0;x[3]=0;}
   int & operator[](const int i) {return x[i];}
   int operator[](const int i)const {return x[i];}
   int x[4];
   int label;
   Vec3 n,c,a;
+  int texId[3];
 };
 
 
@@ -51,6 +52,8 @@ public:
   void compute_plane();
   void read_ply(std::ifstream & f);
   void read_ply2(std::ifstream & f);
+  void read_obj(std::ifstream & f);
+
   void load_tex(const char * filename);
   void load_ptex(const char * filename);
 private:

@@ -449,6 +449,61 @@ void Mesh::save_plane(const char * filename)
   out.close();
 }
 
+void Mesh::read_obj(std::ifstream & f)
+{
+  std::string line;
+  std::string vTok("v");
+  std::string fTok("f");
+  std::string texTok("vt");
+  char bslash='/',space=' ';
+  std::string tok;
+  while(1){
+    std::getline(f,line);
+    if(f.eof()){
+      break;
+    }
+    if(line.at(0)=='#'){
+      continue;
+    }
+    std::stringstream ss(line);
+    ss>>tok;
+    if(tok==vTok){
+      Vec3 vec;
+      ss>>vec[0]>>vec[1]>>vec[2];
+      v.push_back(vec);
+    }else if(tok==fTok){
+      if(line.find(bslash)!=std::string::npos){
+        std::replace(line.begin(),line.end(),bslash,space);
+        std::stringstream facess(line);
+        Trig trig;
+        facess>>tok;
+        for(int ii=0;ii<3;ii++){
+          facess>>trig[ii]>>trig.texId[ii];
+          trig[ii]--;
+          trig.texId[ii]--;
+        }
+        t.push_back(trig);
+      }else{
+        Trig trig;
+        for(int ii=0;ii<3;ii++){
+          ss>>trig[ii];
+          trig[ii]--;
+          trig.texId[ii]=0;
+        }
+        t.push_back(trig);
+      }
+    }else if(tok==texTok){
+      Vec3 texcoord;
+      ss>>texcoord[0];
+      ss>>texcoord[1];
+      tex.push_back(texcoord);
+    }
+  }
+
+  color.push_back(Vec3(1,1,1));
+  nLabel=1;
+}
+
 void Mesh::read_ply(std::ifstream & f)
 {
   std::string line;
@@ -561,13 +616,16 @@ Mesh::Mesh(const char * filename, int _nLabel)
     return;
   }
 
-  if(filename[strlen(filename)-1]=='y'){
+  switch(filename[strlen(filename)-1]){
+  case 'y':
     read_ply(f);
-  }
-  else{
+    break;
+  case 'j':
+    read_obj(f);
+    break;
+  default:
     read_ply2(f);
     assign_color();
-
   }
 
   real_t mn[3]= {1,1,1};
@@ -663,14 +721,14 @@ void Mesh::draw(std::vector<Vec3>&v)
     b= b/b.norm();
     if(tex_buf && tex.size()>0){
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
-      glTexCoord2f(tex[t[ii][0]][0],tex[t[ii][0]][1]);
+      glTexCoord2f(tex[t[ii].texId[0]][0],tex[t[ii].texId[0]][1]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
 
-      glTexCoord2f(tex[t[ii][1]][0],tex[t[ii][1]][1]);
+      glTexCoord2f(tex[t[ii].texId[1]][0],tex[t[ii].texId[1]][1]);
       glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
       glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
 
-      glTexCoord2f(tex[t[ii][2]][0],tex[t[ii][2]][1]);
+      glTexCoord2f(tex[t[ii].texId[2]][0],tex[t[ii].texId[2]][1]);
       glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
     }else{

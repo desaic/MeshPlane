@@ -273,11 +273,13 @@ int main(int argc, char** argv)
     }
   }
   m=new Mesh (argv[1],nLabel);
+  Mesh mtemp("bunny25.ply2",50);
   m->load_ptex("bull.ptx");
   m->load_tex("../bunny_tex1.png");
   minc_nlabel=nLabel;
   m->compute_plane();
   m->save_plane("plane.txt");
+  m->v=mtemp.v;
   if(run){
     pthread_t thread;
     pthread_create(&thread, 0, iterate,(void*)m);
