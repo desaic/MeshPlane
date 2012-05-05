@@ -293,12 +293,11 @@ void Mesh::compute_plane()
               break;
             }
           }
-
         }
         break;
       }
     }
-
+/*
     if(adjMat[ii].size()<3){
       boundary=true;
       for(int jj=0;jj<3;jj++){
@@ -308,7 +307,7 @@ void Mesh::compute_plane()
         }
       }
     }
-
+*/
     if(!boundary) {
       continue;
     }
@@ -319,7 +318,9 @@ void Mesh::compute_plane()
     if(label==0){
 //      std::cout<<"debug\n";
     }
-
+    if(ii==4682){
+      std::cout<<"debug\n";
+    }
 //  int prevTidx=ii;
     while(1) {
       if(vlabel[cur].size()>2 || isOnEdge(cur,adjMat, vtlist,t) ){
@@ -359,6 +360,7 @@ void Mesh::compute_plane()
       if( (!foundBd) || next==v0) {
         break;
       }
+
       prev = cur;
       cur = next;
     }
@@ -386,7 +388,7 @@ void Mesh::load_tex(const char * filename){
   glEnable(GL_TEXTURE_2D);
   glGenTextures(1,&texture);
   glBindTexture( GL_TEXTURE_2D, texture );
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_LUMINANCE);
+  //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_LUMINANCE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 			GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -461,6 +463,9 @@ void Mesh::read_obj(std::ifstream & f)
     std::getline(f,line);
     if(f.eof()){
       break;
+    }
+    if(line.size()<3){
+      continue;
     }
     if(line.at(0)=='#'){
       continue;
@@ -686,9 +691,61 @@ void Mesh::compute_norm()
     n[ii]/= n[ii].norm();
   }
 }
+
+void Mesh::drawPlane(int k)
+{
+  if(k>(int)planes.size()-1){
+    k=planes.size()-1;
+  }
+  Vec3 nn = planes[k].n;
+  Vec3 v0=planes[k].c;
+  Vec3 ax, ay;
+  Vec3 arbit(1,0,0);
+  if(std::abs(nn[0])>0.9) {
+    arbit=Vec3(0,1,0);
+  }
+  ax = arbit.cross(nn);
+  ax/=ax.norm();
+  ay=nn.cross(ax);
+  ay/=ay.norm();
+
+  glDisable(GL_LIGHTING);
+  glBegin(GL_TRIANGLES);
+  if(tex_buf){
+    glBindTexture(GL_TEXTURE_2D,texture);
+  }
+
+  for(unsigned int ii=0; ii<t.size(); ii++) {
+    int l = t[ii].label;
+    if(l!=k){
+      continue;
+    }
+    if(tex_buf && tex.size()>0){
+      for(int jj=0;jj<3;jj++){
+        Vec3 vert=v[t[ii][jj]];
+        vert-=v0;
+        vert=Vec3(vert.dot(ax),vert.dot(ay),vert.dot(nn));
+        glNormal3f(0,0,1);
+        glTexCoord2f(tex[t[ii].texId[jj]][0],tex[t[ii].texId[jj]][1]);
+        glVertex3f(vert[0],vert[1],-1);
+      }
+    }else{
+      glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
+      glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
+      glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
+      glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
+      glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
+      glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+
+    }
+
+  }
+  glEnd();
+}
+
 void Mesh::draw(std::vector<Vec3>&v)
 {
-
+ // glDisable(GL_LIGHTING);
   glBegin(GL_TRIANGLES);
   GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
   GLfloat ambient[4]= {0.1f,0.1f,0.1f,1.0f};
@@ -700,6 +757,7 @@ void Mesh::draw(std::vector<Vec3>&v)
   if(tex_buf){
     glBindTexture(GL_TEXTURE_2D,texture);
   }
+
   for(unsigned int ii=0; ii<t.size(); ii++) {
     int l = t[ii].label;
 /*    if(ptx && (int)ii< ptx->numFaces()){
@@ -713,7 +771,7 @@ void Mesh::draw(std::vector<Vec3>&v)
   */
     GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
     glColor3f(color[l][0],color[l][1],color[l][2]);
-    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+   // glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 
     Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];

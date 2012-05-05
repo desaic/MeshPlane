@@ -44,6 +44,6 @@ unsigned char *imageio_load_image(const char *fileName,
 // The image format is RGBA.
 bool imageio_save_image(const char *fileName, unsigned char *buffer,
                         int width, int height);
-
+bool imageio_save_screenshot(const char *fileName);
 #endif
 

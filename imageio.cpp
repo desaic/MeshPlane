@@ -226,4 +226,17 @@ bool imageio_save_image(const char *fileName, unsigned char *buffer,
     else
         return false;
 }
+bool imageio_save_screenshot(const char *fileName)
+{
+    int width, height;
 
+width = glutGet(GLUT_WINDOW_WIDTH);
+height = glutGet(GLUT_WINDOW_HEIGHT);
+    unsigned char *buffer = new unsigned char[width * height * 4];
+    if (!buffer)
+        return false;
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    bool result = imageio_save_image(fileName, buffer, width, height);
+    delete [] buffer;
+    return result;
+}

@@ -223,19 +223,20 @@ void vertex_mat(Mesh &m , float vW0, CCS& ccs , std::vector<double> & bb)
       processed[idx]=1;
       labels.insert(m.t[ii].label);
       bool found = 1;
-      size_t prev = ii;
-      size_t cur = ii;
+      std::set<int>visited_t;
+      visited_t.insert(ii);
+      int cur=ii;
       while(found) {
         found =0 ;
         for (size_t nbr = 0; nbr<m.adjMat[cur].size(); nbr++) {
           size_t nbrIdx = m.adjMat[cur][nbr];
-          if(nbrIdx==prev || nbrIdx == ii) {
+          if(visited_t.find(nbrIdx)!=visited_t.end()) {
             continue;
           }
           if(find(m.t[nbrIdx].x,idx,3)>=0) {
             found=1;
-            prev=cur;
             cur=nbrIdx;
+            visited_t.insert(nbrIdx);
             break;
           }
         }

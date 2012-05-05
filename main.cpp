@@ -12,14 +12,16 @@
 #include "poly.hpp"
 #include "mincut.hpp"
 #include <string.h>
+#include <sstream>
 #include "mesh_query.h"
 #include "bp.hpp"
+#include <imageio.h>
 static Mesh * m;
 //static Poly * p;
 struct Cam{
   Cam():rotx(0),roty(0){
     for (int ii=0;ii<3;ii++){
-      eye[ii]=0.5;
+      eye[ii]=0.0;
       at[ii]=0.0;
     }
     eye[2]=3;
@@ -31,13 +33,14 @@ struct Cam{
 static Cam* cam;
 void init(void)
 {
-  glClearColor (0.2, 0.4, 0.9, 0.0);
+  glClearColor (0, 0, 0, 0.0);
   // glShadeModel (GL_SMOOTH);
   //glShadeModel (GL_FLAT );
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHT1);
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_ALPHA);
   // glEnable(GL_NORMALIZE);
 
 
@@ -46,6 +49,8 @@ void init(void)
   glLightfv (GL_LIGHT1, GL_SPECULAR, white);
 }
 
+static int planeId=0;
+static bool draw_tex=false;
 /*  Here is where the light position is reset after the modeling
  *  transformation (glRotated) is called.  This places the
  *  light at a new position in world coordinates.  The cube
@@ -56,14 +61,23 @@ void display(void)
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
+  if(draw_tex){
+    m->drawPlane(planeId);
+    glFlush ();
+    if(planeId<(int)m->planes.size()){
+      std::stringstream ss;
+      ss<<planeId<<".png";
+      imageio_save_screenshot(ss.str().c_str());
 
-
-
+      planeId++;
+    }
+    return;
+  }
   gluLookAt(cam->eye[0], cam->eye[1],cam->eye[2],
 	    cam->at[0],cam->at[1], cam->at[2],
 	    0.0, 1.0, 0.0);
 
-	    GLfloat position[] = { 0.0, -.5, 2, 1.0 };
+  GLfloat position[] = { 0.0, -.5, 2, 1.0 };
   GLfloat position1[] = { 0.0, .5, -2, 1.0 };
 
   glPushMatrix();
@@ -87,6 +101,8 @@ void display(void)
   glRotatef(180*cam->rotx/3.14,1,0,0);
   glRotatef(180*cam->roty/3.14,0,1,0);
   m->draw(m->v);
+
+
   glPopMatrix();
 
   glPushMatrix();
@@ -98,7 +114,6 @@ void display(void)
   m->drawLines();
   glPopMatrix();
   glFlush ();
-
 }
 
 void reshape (int w, int h)
@@ -107,6 +122,7 @@ void reshape (int w, int h)
   glMatrixMode (GL_PROJECTION);
   glLoadIdentity();
   gluPerspective(40.0, (GLfloat) w/(GLfloat) h, 1.0, 20.0);
+//  glOrtho(-1,1,-1,1,10,0.1);
 }
 
 GLdouble  norm(GLdouble * v)
@@ -206,9 +222,9 @@ void* iterate(void* arg){
   wV0=1;
   wPt=0.5;
 
-  vW=30;
-  dataCostW=30000000;
-  smoothW=300;
+  vW=1;
+  dataCostW=300;
+  smoothW=250;
 	distw=1;
   BP bp(*m);
   m->compute_plane();
@@ -250,7 +266,7 @@ int main(int argc, char** argv)
     exit(0);
   }
   glutInit(&argc, argv);
-  glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+  glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH|GLUT_ALPHA );
   glutInitWindowSize (500, 500);
   glutInitWindowPosition (100, 100);
   glutCreateWindow (argv[0]);
@@ -262,6 +278,8 @@ int main(int argc, char** argv)
   glutTimerFunc(0.1, animate, 0);
   int nLabel=50;
   bool run=false;
+  const char * tex_file="../bunny_tex1.png";
+  const char * label_file="";
   for(int ii=0;ii<argc;ii++){
     if(strcmp(argv[ii], "-k")==0){
       ii++;
@@ -271,15 +289,31 @@ int main(int argc, char** argv)
       ii++;
       run=true;
     }
+    if(strcmp(argv[ii],"-t")==0){
+      ii++;
+      tex_file=argv[ii];
+    }
+    if(strcmp(argv[ii],"-l")==0){
+      ii++;
+      label_file=argv[ii];
+    }
   }
+
   m=new Mesh (argv[1],nLabel);
-  Mesh mtemp("bunny25.ply2",50);
-  m->load_ptex("bull.ptx");
-  m->load_tex("../bunny_tex1.png");
+  //  m->load_ptex("bull.ptx");
+  m->load_tex(tex_file);
   minc_nlabel=nLabel;
+  if(label_file[0]){
+    Mesh mtemp(label_file,1);
+    m->v=mtemp.v;
+    m->nLabel=mtemp.nLabel;
+    for(size_t ii=0;ii<m->t.size();ii++){
+      m->t[ii].label=mtemp.t[ii].label;
+    }
+  }
   m->compute_plane();
-  m->save_plane("plane.txt");
-  m->v=mtemp.v;
+//  m->save_plane("plane.txt");
+
   if(run){
     pthread_t thread;
     pthread_create(&thread, 0, iterate,(void*)m);

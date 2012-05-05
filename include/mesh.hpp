@@ -41,6 +41,7 @@ public:
   void adjlist();
   void draw(std::vector<Vec3>&v);
   void drawLines();
+  void drawPlane(int k);
   void assign_color();
   void save(const char * filename);
   void save_plane(const char * filename);
