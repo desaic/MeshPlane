@@ -325,7 +325,7 @@ void Mesh::compute_plane()
     int jj0=2;
 
     for(int jj=0; jj<3; jj++) {
-      LabeledEdge le(t[ii][jj],t[ii][jj0],t[ii].label);
+      LabeledEdge le(t[ii][jj],t[ii][jj0],t[ii].label,ii);
       jj0=jj;
       if(edges.find(le)==edges.end()) {
         continue;
@@ -337,12 +337,21 @@ void Mesh::compute_plane()
       if(vlabel[prev].size()>2 || isOnEdge(le,adjMat, t) ) {
           vertlist.push_back(prev);
       }
+      edgeVisited.insert(le);
       int next = cur;
-      int v0=cur;
       int tIdx=0;
       while(1) {
-        if(vlabel[cur].size()>2 || isOnEdge(le,adjMat,t) ) {
+        if(vlabel[cur].size()>2
+           &&(vertlist.size()==0||vertlist[0]!=cur)){
           vertlist.push_back(cur);
+        }
+        if(isOnEdge(le,adjMat,t)){
+          if(vertlist.size()==0||vertlist[vertlist.size()-1]!=prev){
+            vertlist.push_back(prev);
+          }
+          if(vertlist.size()==0||vertlist[0]!=cur){
+            vertlist.push_back(cur);
+          }
         }
         bool foundBd = false;
         for(size_t jj=0; jj<vtlist[cur].size(); jj++) {
@@ -355,7 +364,7 @@ void Mesh::compute_plane()
             if(nbrVidx==cur || nbrVidx == prev) {
               continue;
             }
-            le =LabeledEdge(cur, nbrVidx, label);
+            le =LabeledEdge(cur, nbrVidx, label,nbrTidx);
             if(edgeVisited.find(le)!=edgeVisited.end()) {
               continue;
             }
@@ -373,7 +382,7 @@ void Mesh::compute_plane()
             break;
           }
         }
-        if( (!foundBd) || next==v0) {
+        if(!foundBd) {
           break;
         }
 

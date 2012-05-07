@@ -218,7 +218,7 @@ void* iterate(void* arg){
     int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  wS=3;
+  wS=30;
   wI=1;
   wV0=10;
   wPt=0.5;
