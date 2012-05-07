@@ -233,8 +233,8 @@ void* iterate(void* arg){
   for(int ii=0;ii<ITER;ii++){
     wPt+=1;
     printf("iter %d\n",ii);
-   // runMincut(*m);
-    runKmeans(*m);
+    runMincut(*m);
+    //runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);

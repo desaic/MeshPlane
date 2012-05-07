@@ -28,6 +28,7 @@ void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
       float cost = distw * (plane_d-d).L1n();
       cost += (m.t[ii].n- plane[jj].n).L1n();
       cost /= (1+distw);
+      cost*=m.t[ii].A;
       datac[ii][jj]=cost;
       if(mn<0 || mn>cost){
 	mn=cost;
@@ -68,6 +69,7 @@ void smooth_cost(Mesh& m,
       }
       float cost = distance( m.t[ii], m.t[nbrIdx]);//(area1+area2)*
       cost = 1/(1+cost);
+      cost *=(m.t[ii].A+m.t[nbrIdx].A)/2;
       smoothc[std::make_pair(ii,nbrIdx)]=cost;
       if(mn<0 || mn>cost){
 	mn=cost;

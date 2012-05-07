@@ -148,16 +148,24 @@ bool Mesh::self_intersect()
 
 void Mesh::get_normal_center()
 {
+  real_t max_area=0;
   for (unsigned int ii=0; ii<t.size(); ii++) {
     Trig & tt= t[ii];
     Vec3 b=v[tt[2]]-v[tt[0]];
     tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
     tt.A=tt.n.norm();
+    if(tt.A>max_area){
+      max_area=tt.A;
+    }
     tt.n/=tt.n.norm();
     for (int ii=0; ii<3; ii++) {
       tt.c+=v[tt[ii]];
     }
     tt.c/=3;
+  }
+  //scale area so that maxmum area is 1
+  for(size_t ii=0;ii<t.size();ii++){
+    t[ii].A/=max_area;
   }
 }
 
