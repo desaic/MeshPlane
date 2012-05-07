@@ -16,8 +16,8 @@
 #include "imageio.h"
 bool contains(int * a ,  int x, size_t size)
 {
-  for(size_t ii=0;ii<size;ii++){
-    if(a[ii]==x){
+  for(size_t ii=0; ii<size; ii++) {
+    if(a[ii]==x) {
       return true;
     }
   }
@@ -40,11 +40,12 @@ struct Edge {
   }
 };
 
-struct LabeledEdge{
+struct LabeledEdge {
   std::pair<int,int >e;
   int label;
-  LabeledEdge(int a=0, int b=0 , int _label=0) :
-  label(_label){
+  int tidx;
+  LabeledEdge(int a=0, int b=0 , int _label=0, int _tidx=0) :
+    label(_label), tidx(_tidx) {
     if(a>b) {
       int tmp =a;
       a=b;
@@ -53,14 +54,14 @@ struct LabeledEdge{
     e.first=a;
     e.second=b;
   }
-  bool operator<(const LabeledEdge& _e)const{
-    if(e < _e.e){
+  bool operator<(const LabeledEdge& _e)const {
+    if(e < _e.e) {
       return true;
     }
-    if(e>_e.e){
+    if(e>_e.e) {
       return false;
     }
-    if(label<_e.label){
+    if(label<_e.label) {
       return true;
     }
     return false;
@@ -151,6 +152,7 @@ void Mesh::get_normal_center()
     Trig & tt= t[ii];
     Vec3 b=v[tt[2]]-v[tt[0]];
     tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
+    tt.A=tt.n.norm();
     tt.n/=tt.n.norm();
     for (int ii=0; ii<3; ii++) {
       tt.c+=v[tt[ii]];
@@ -159,7 +161,7 @@ void Mesh::get_normal_center()
   }
 }
 
-void findEdge(int va, int vb, std::vector<Trig>& t,
+int findEdge(int va, int vb, std::vector<Trig>& t,
               std::vector<std::vector< int > > &vtlist, int * wings)
 {
   int cnt=0;
@@ -170,11 +172,12 @@ void findEdge(int va, int vb, std::vector<Trig>& t,
         wings[cnt]=tIdx;
         cnt++;
         if(cnt==2) {
-          return;
+          return cnt ;
         }
       }
     }
   }
+  return cnt;
 }
 #include <pthread.h>
 pthread_mutex_t meshm = PTHREAD_MUTEX_INITIALIZER;
@@ -185,21 +188,21 @@ bool isOnEdge(int vidx, std::vector<std::vector<int > > & adjMat,
               std::vector<Trig > & t)
 {
   int prevT=vtlist[vidx][0];
-  for(size_t ii=1;ii<vtlist[vidx].size();ii++){
+  for(size_t ii=1; ii<vtlist[vidx].size(); ii++) {
     int tidx = vtlist[vidx][ii];
     bool found = false;
     int nbrTidx;
-    for(size_t jj=0;jj<adjMat[tidx].size();jj++){
+    for(size_t jj=0; jj<adjMat[tidx].size(); jj++) {
       nbrTidx=adjMat[tidx][jj];
-      if(nbrTidx==prevT){
+      if(nbrTidx==prevT) {
         continue;
       }
-      if(contains(t[nbrTidx].x, vidx,3)){
+      if(contains(t[nbrTidx].x, vidx,3)) {
         found = true;
         break;
       }
     }
-    if(!found){
+    if(!found) {
       return true;
     }
     prevT=nbrTidx;
@@ -207,13 +210,35 @@ bool isOnEdge(int vidx, std::vector<std::vector<int > > & adjMat,
   return false;
 }
 
+bool isOnEdge(const LabeledEdge & le, std::vector<std::vector<int > > & adjMat,
+              std::vector<Trig > & t)
+{
+  int jj=le.e.first;
+  int jj0=le.e.second;
+  bool foundNbr = false;
+  int tidx=le.tidx;
+
+//find neighboring triangle that share the same edge
+  int nbrIdx=0;
+  for(size_t kk=0; kk<adjMat[tidx].size(); kk++) {
+    nbrIdx=adjMat[tidx][kk];
+    if(contains(t[nbrIdx].x, jj,3)
+        &&contains(t[nbrIdx].x, jj0,3)) {
+      foundNbr = true;
+      break;
+    }
+  }
+  return !foundNbr;
+}
+
+
 void Mesh::fix_inner_cluster()
 {
   std::vector<bool>processed(t.size());
   printf("0\n");
   //all clusters inside another single cluster is merged into the outer cluster
-  for(size_t ii=0;ii<t.size();ii++){
-    if(processed[ii]){
+  for(size_t ii=0; ii<t.size(); ii++) {
+    if(processed[ii]) {
       continue;
     }
     std::map<int,bool>nbrSet;
@@ -221,26 +246,26 @@ void Mesh::fix_inner_cluster()
     size_t front = 0;
     que.push_back(ii);
     int label=t[ii].label;
-    while(front<que.size()){
+    while(front<que.size()) {
       int idx=que[front];
       front++;
       processed[idx]=true;
-      for(size_t jj=0;jj<adjMat[idx].size();jj++){
+      for(size_t jj=0; jj<adjMat[idx].size(); jj++) {
         int nbrIdx = adjMat[idx][jj];
-        if(t[nbrIdx].label!=label){
+        if(t[nbrIdx].label!=label) {
           nbrSet[t[nbrIdx].label]=true;
           continue;
         }
-        if(processed[nbrIdx]){
+        if(processed[nbrIdx]) {
           continue;
         }
         processed[nbrIdx]=true;
         que.push_back(nbrIdx);
       }
     }
-    if(nbrSet.size()==1){
+    if(nbrSet.size()==1) {
       label = nbrSet.begin()->first;
-      for(size_t jj=0;jj<que.size();jj++){
+      for(size_t jj=0; jj<que.size(); jj++) {
         t[que[jj]].label=label;
       }
     }
@@ -250,122 +275,115 @@ void Mesh::fix_inner_cluster()
 
 void Mesh::compute_plane()
 {
-  std::vector<bool>processed(t.size());
   std::vector<std::vector< int > > vtlist(v.size());
   std::vector<std::set<int> > vlabel(v.size());
   std::set<LabeledEdge> edgeVisited;
+  std::set<LabeledEdge> edges;
   std::vector< std::vector<std::vector<int> > > local_lines(nLabel);
-  for(int ii=0;ii<nLabel;ii++){
+  for(int ii=0; ii<nLabel; ii++) {
     local_lines[ii].resize(0);
   }
 
   adjlist();
   fix_inner_cluster();
   for(size_t ii=0; ii<t.size(); ii++) {
+    int jj0=2;
     for(int jj=0; jj<3; jj++) {
       int vidx=t[ii][jj];
       vtlist[vidx].push_back(ii);
       vlabel[vidx].insert(t[ii].label);
+      //find neighboring triangle that share the same edge
+      bool foundNbr = false;
+      bool foundDifNbr=false;
+      int nbrIdx=0;
+      for(size_t kk=0; kk<adjMat[ii].size(); kk++) {
+        nbrIdx=adjMat[ii][kk];
+        if(contains(t[nbrIdx].x, t[ii][jj],3)
+            &&contains(t[nbrIdx].x, t[ii][jj0],3)) {
+          foundNbr = true;
+          if(t[nbrIdx].label!=t[ii].label) {
+            foundDifNbr=true;
+            break;
+          }
+        }
+      }
+      if(!foundNbr
+          ||foundDifNbr) {
+        edges.insert(LabeledEdge(t[ii][jj],t[ii][jj0],t[ii].label,ii));
+      }
+      jj0=jj;
     }
   }
   get_normal_center();
-
   randcenter(*this, planes, nLabel);
-
-  int wings[2];
+  std::vector<bool>processed(t.size());
   for(size_t ii=0; ii<t.size(); ii++) {
-    if(processed[ii]) {
+    if(processed[ii]){
       continue;
     }
     processed[ii]=true;
-    int boundary= false;
-    int prev=t[ii][0], cur;
-    int label = t[ii].label;
-    for(size_t jj=0; jj<adjMat[ii].size();jj++) {
-      int nbrIdx = adjMat [ii][jj];
-      if(t[nbrIdx].label!=label) {
-        boundary= true;
-        for(int kk=0;kk<3;kk++){
-          for(int ll=0;ll<3;ll++){
-            if(t[ii][kk]==t[nbrIdx][ll]){
-              prev = t[ii][kk];
-              cur=prev;
-              break;
+    int jj0=2;
+
+    for(int jj=0; jj<3; jj++) {
+      LabeledEdge le(t[ii][jj],t[ii][jj0],t[ii].label);
+      jj0=jj;
+      if(edges.find(le)==edges.end()) {
+        continue;
+      }
+      std::vector<int> vertlist;
+      int label=le.label;
+      int cur=le.e.first;
+      int prev=le.e.second;
+      if(vlabel[prev].size()>2 || isOnEdge(le,adjMat, t) ) {
+          vertlist.push_back(prev);
+      }
+      int next = cur;
+      int v0=cur;
+      int tIdx=0;
+      while(1) {
+        if(vlabel[cur].size()>2 || isOnEdge(le,adjMat,t) ) {
+          vertlist.push_back(cur);
+        }
+        bool foundBd = false;
+        for(size_t jj=0; jj<vtlist[cur].size(); jj++) {
+          int nbrTidx = vtlist[cur][jj];
+          if(t[nbrTidx].label!=label) {
+            continue;
+          }
+          for(int kk=0; kk<3; kk++) {
+            int nbrVidx = t[nbrTidx][kk];
+            if(nbrVidx==cur || nbrVidx == prev) {
+              continue;
             }
+            le =LabeledEdge(cur, nbrVidx, label);
+            if(edgeVisited.find(le)!=edgeVisited.end()) {
+              continue;
+            }
+            if(edges.find(le)==edges.end()){
+              continue;
+            }
+            foundBd=true;
+            next = nbrVidx;
+            processed[nbrTidx]=true;
+            edgeVisited.insert(le);
+            tIdx=nbrTidx;
+            break;
+          }
+          if(foundBd) {
+            break;
           }
         }
-        break;
-      }
-    }
-/*
-    if(adjMat[ii].size()<3){
-      boundary=true;
-      for(int jj=0;jj<3;jj++){
-        if(isOnEdge(t[ii][jj],adjMat,vtlist, t)){
-          cur = t[ii][jj];
+        if( (!foundBd) || next==v0) {
           break;
         }
-      }
-    }
-*/
-    if(!boundary) {
-      continue;
-    }
 
-    std::vector<int> vertlist;
-    int next = cur;
-    int v0=cur;
-    if(label==0){
-//      std::cout<<"debug\n";
-    }
-    if(ii==4682){
-      std::cout<<"debug\n";
-    }
-//  int prevTidx=ii;
-    while(1) {
-      if(vlabel[cur].size()>2 || isOnEdge(cur,adjMat, vtlist,t) ){
-        vertlist.push_back(cur);
+        prev = cur;
+        cur = next;
+        le =LabeledEdge(prev, cur, label,tIdx);
       }
-      bool foundBd = false;
-      for(size_t jj=0; jj<vtlist[cur].size(); jj++) {
-        int nbrTidx = vtlist[cur][jj];
-        if(t[nbrTidx].label!=label) {
-          continue;
-        }
-        for(int kk=0; kk<3; kk++) {
-          int nbrVidx = t[nbrTidx][kk];
-          if(nbrVidx==cur || nbrVidx == prev
-              || vlabel[nbrVidx].size()<2) {
-            continue;
-          }
-          LabeledEdge le (cur, nbrVidx, label);
-          if(edgeVisited.find(le)!=edgeVisited.end()){
-            continue;
-          }
-          findEdge(cur,nbrVidx,t,vtlist,wings);
-          if(t[wings[0]].label==t[wings[1]].label) {
-            continue;
-          }
-          foundBd=true;
-          next = nbrVidx;
-          processed[nbrTidx]=true;
-          edgeVisited.insert(le);
-          //prevTidx=nbrTidx;
-          break;
-        }
-        if(foundBd) {
-          break;
-        }
+      if(vertlist.size()>2) {
+        local_lines[label].push_back(vertlist);
       }
-      if( (!foundBd) || next==v0) {
-        break;
-      }
-
-      prev = cur;
-      cur = next;
-    }
-    if(vertlist.size()>2) {
-      local_lines[label].push_back(vertlist);
     }
   }
 
@@ -373,15 +391,11 @@ void Mesh::compute_plane()
   lines = local_lines;
   pthread_mutex_unlock(&meshm);
 }
-real_t Mesh::area(const Trig & trig)
-{
-  Vec3 n=(v[trig[1]]-v[trig[0]]).cross(v[trig[2]]-v[trig[0]]);
-  return n.norm()/2;
-}
-void Mesh::load_tex(const char * filename){
+
+void Mesh::load_tex(const char * filename) {
   int width,height;
   unsigned char * buf = imageio_load_image(filename, &width,&height);
-  if(!buf){
+  if(!buf) {
     return;
   }
   tex_buf=buf;
@@ -389,12 +403,12 @@ void Mesh::load_tex(const char * filename){
   glGenTextures(1,&texture);
   glBindTexture( GL_TEXTURE_2D, texture );
   //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_LUMINANCE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-			GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-			GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                  GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                  GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-			 width,  height,  0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+               width,  height,  0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 }
 void Mesh::load_ptex(const char * filename)
 {
@@ -410,7 +424,7 @@ void Mesh::save_plane(const char * filename)
 
   for(size_t ii=0; ii<lines.size(); ii++) {
     out<<lines[ii].size()<<"\n";
-    if(lines[ii].size()<1){
+    if(lines[ii].size()<1) {
       out<<"\n";
       continue;
     }
@@ -459,54 +473,51 @@ void Mesh::read_obj(std::ifstream & f)
   std::string texTok("vt");
   char bslash='/',space=' ';
   std::string tok;
-  while(1){
+  while(1) {
     std::getline(f,line);
-    if(f.eof()){
+    if(f.eof()) {
       break;
     }
-    if(line.size()<3){
+    if(line.size()<3) {
       continue;
     }
-    if(line.at(0)=='#'){
+    if(line.at(0)=='#') {
       continue;
     }
     std::stringstream ss(line);
     ss>>tok;
-    if(tok==vTok){
+    if(tok==vTok) {
       Vec3 vec;
       ss>>vec[0]>>vec[1]>>vec[2];
       v.push_back(vec);
-    }else if(tok==fTok){
-      if(line.find(bslash)!=std::string::npos){
+    } else if(tok==fTok) {
+      if(line.find(bslash)!=std::string::npos) {
         std::replace(line.begin(),line.end(),bslash,space);
         std::stringstream facess(line);
         Trig trig;
         facess>>tok;
-        for(int ii=0;ii<3;ii++){
+        for(int ii=0; ii<3; ii++) {
           facess>>trig[ii]>>trig.texId[ii];
           trig[ii]--;
           trig.texId[ii]--;
         }
         t.push_back(trig);
-      }else{
+      } else {
         Trig trig;
-        for(int ii=0;ii<3;ii++){
+        for(int ii=0; ii<3; ii++) {
           ss>>trig[ii];
           trig[ii]--;
           trig.texId[ii]=0;
         }
         t.push_back(trig);
       }
-    }else if(tok==texTok){
+    } else if(tok==texTok) {
       Vec3 texcoord;
       ss>>texcoord[0];
       ss>>texcoord[1];
       tex.push_back(texcoord);
     }
   }
-
-  color.push_back(Vec3(1,1,1));
-  nLabel=1;
 }
 
 void Mesh::read_ply(std::ifstream & f)
@@ -516,9 +527,9 @@ void Mesh::read_ply(std::ifstream & f)
   std::string faceLine("element face");
   std::string texLine("property float s");
   std::string endHeaderLine("end_header");
-  while(true){
+  while(true) {
     std::getline(f,line);
-    if(std::string::npos!=line.find(vertLine)){
+    if(std::string::npos!=line.find(vertLine)) {
       break;
     }
   }
@@ -528,12 +539,12 @@ void Mesh::read_ply(std::ifstream & f)
   int nvert;
   ss>>nvert;
   bool hasTex=false;
-  while(true){
+  while(true) {
     std::getline(f,line);
-    if(std::string::npos!=line.find(faceLine)){
+    if(std::string::npos!=line.find(faceLine)) {
       break;
     }
-    if(std::string::npos!=line.find(texLine)){
+    if(std::string::npos!=line.find(texLine)) {
       hasTex=true;
     }
   }
@@ -541,23 +552,23 @@ void Mesh::read_ply(std::ifstream & f)
   ss1>>token>>token;
   int nface;
   ss1>>nface;
-  while(true){
+  while(true) {
     std::getline(f,line);
-    if(std::string::npos!=line.find(endHeaderLine)){
+    if(std::string::npos!=line.find(endHeaderLine)) {
       break;
     }
   }
 
   v.resize(nvert);
   t.resize(nface);
-  if(hasTex){
+  if(hasTex) {
     tex.resize(nvert);
   }
   for (int ii =0; ii<nvert; ii++) {
     for (int jj=0; jj<3; jj++) {
       f>>v[ii][jj];
     }
-    if(hasTex){
+    if(hasTex) {
       for (int jj=0; jj<2; jj++) {
         f>>tex[ii][jj];
       }
@@ -572,8 +583,6 @@ void Mesh::read_ply(std::ifstream & f)
       f>>t[ii][jj];
     }
   }
-  color.push_back(Vec3(1,1,1));
-  nLabel=1;
 }
 
 void Mesh::read_ply2(std::ifstream&f)
@@ -602,7 +611,7 @@ void Mesh::read_ply2(std::ifstream&f)
       t[ii].label=0;
     } else {
       ss>>t[ii].label;
-      if(ss.fail()){
+      if(ss.fail()) {
         t[ii].label=0;
       }
     }
@@ -621,7 +630,7 @@ Mesh::Mesh(const char * filename, int _nLabel)
     return;
   }
 
-  switch(filename[strlen(filename)-1]){
+  switch(filename[strlen(filename)-1]) {
   case 'y':
     read_ply(f);
     break;
@@ -630,9 +639,8 @@ Mesh::Mesh(const char * filename, int _nLabel)
     break;
   default:
     read_ply2(f);
-    assign_color();
   }
-
+  assign_color();
   real_t mn[3]= {1,1,1};
   real_t mx[3]= {-1,-1,-1};
 
@@ -694,7 +702,7 @@ void Mesh::compute_norm()
 
 void Mesh::drawPlane(int k)
 {
-  if(k>(int)planes.size()-1){
+  if(k>(int)planes.size()-1) {
     k=planes.size()-1;
   }
   Vec3 nn = planes[k].n;
@@ -711,17 +719,17 @@ void Mesh::drawPlane(int k)
 
   glDisable(GL_LIGHTING);
   glBegin(GL_TRIANGLES);
-  if(tex_buf){
+  if(tex_buf) {
     glBindTexture(GL_TEXTURE_2D,texture);
   }
 
   for(unsigned int ii=0; ii<t.size(); ii++) {
     int l = t[ii].label;
-    if(l!=k){
+    if(l!=k) {
       continue;
     }
-    if(tex_buf && tex.size()>0){
-      for(int jj=0;jj<3;jj++){
+    if(tex_buf && tex.size()>0) {
+      for(int jj=0; jj<3; jj++) {
         Vec3 vert=v[t[ii][jj]];
         vert-=v0;
         vert=Vec3(vert.dot(ax),vert.dot(ay),vert.dot(nn));
@@ -729,7 +737,7 @@ void Mesh::drawPlane(int k)
         glTexCoord2f(tex[t[ii].texId[jj]][0],tex[t[ii].texId[jj]][1]);
         glVertex3f(vert[0],vert[1],-1);
       }
-    }else{
+    } else {
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
       glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
@@ -745,7 +753,7 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
- // glDisable(GL_LIGHTING);
+// glDisable(GL_LIGHTING);
   glBegin(GL_TRIANGLES);
   GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
   GLfloat ambient[4]= {0.1f,0.1f,0.1f,1.0f};
@@ -754,30 +762,27 @@ void Mesh::draw(std::vector<Vec3>&v)
   glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
   GLfloat s=10;
   glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
-  if(tex_buf){
+  if(tex_buf) {
     glBindTexture(GL_TEXTURE_2D,texture);
   }
 
   for(unsigned int ii=0; ii<t.size(); ii++) {
     int l = t[ii].label;
-/*    if(ptx && (int)ii< ptx->numFaces()){
-      float ptxColor[4];
-      ptx->getPixel(ii,0,0,ptxColor,0,4);
-      glColor3f(ptxColor[0],ptxColor[1],ptxColor[2]);
-      GLfloat diffuse[4]= {ptxColor[0],ptxColor[1],ptxColor[2],1.0f};
-      glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
-    }
-    else{
-  */
-    GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
-    glColor3f(color[l][0],color[l][1],color[l][2]);
-   // glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+    /*    if(ptx && (int)ii< ptx->numFaces()){
+          float ptxColor[4];
+          ptx->getPixel(ii,0,0,ptxColor,0,4);
+          glColor3f(ptxColor[0],ptxColor[1],ptxColor[2]);
+          GLfloat diffuse[4]= {ptxColor[0],ptxColor[1],ptxColor[2],1.0f};
+          glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+        }
+        else{
+      */
 
     Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
     b= b/b.norm();
-    if(tex_buf && tex.size()>0){
+    if(tex_buf && tex.size()>0) {
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glTexCoord2f(tex[t[ii].texId[0]][0],tex[t[ii].texId[0]][1]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
@@ -789,7 +794,11 @@ void Mesh::draw(std::vector<Vec3>&v)
       glTexCoord2f(tex[t[ii].texId[2]][0],tex[t[ii].texId[2]][1]);
       glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
-    }else{
+    } else {
+    GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
+    glColor3f(color[l][0],color[l][1],color[l][2]);
+    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
       glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
@@ -798,7 +807,7 @@ void Mesh::draw(std::vector<Vec3>&v)
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
 
     }
-    if(t[ii].label==highlight){
+    if(t[ii].label==highlight) {
       glVertex3f(v[t[ii][0]][0]+b.x[0],v[t[ii][0]][1]+b.x[1],v[t[ii][0]][2]+b.x[2]);
 
       glVertex3f(v[t[ii][1]][0]+b.x[0],v[t[ii][1]][1]+b.x[1],v[t[ii][1]][2]+b.x[2]);
@@ -853,13 +862,13 @@ void Mesh::drawLines()
         glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
         glVertex3f(v[v1][0],v[v1][1],v[v1][2]);
 
-        if((int)ii==highlight && planes.size()>ii){
-        Vec3 v0hl=v[v0]+planes[ii].n;
-        Vec3 v1hl=v[v1]+planes[ii].n;
-        glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
-        glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
-        glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
-        glVertex3f(v1hl[0],v1hl[1],v1hl[2]);
+        if((int)ii==highlight && planes.size()>ii) {
+          Vec3 v0hl=v[v0]+planes[ii].n;
+          Vec3 v1hl=v[v1]+planes[ii].n;
+          glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
+          glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
+          glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
+          glVertex3f(v1hl[0],v1hl[1],v1hl[2]);
 
         }
       }
@@ -939,7 +948,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
   }
 
   for(int ii=0; ii<nLabel; ii++) {
-   if(count[ii]>0) {
+    if(count[ii]>0) {
       plane[ii].n/=plane[ii].n.norm();
       plane[ii].c/=count[ii];
     } else {
@@ -969,7 +978,7 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
 
   for(int ii=0; ii<m.nLabel; ii++) {
     plane[ii].c/=cnt[ii];
-   // plane[ii].n/=cnt[ii];
+    // plane[ii].n/=cnt[ii];
     plane[ii].n/=plane[ii].n.norm();
   }
 }

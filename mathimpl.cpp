@@ -40,10 +40,14 @@ int bsrch(std::vector<real_t> & val , real_t x)
   return top;
 }
 
+#include <stdio.h>
 int sample_cdf(std::vector<real_t > &cdf)
 {
   double r = rndg.Random();
   r*=cdf[cdf.size()-1];
   int label = bsrch(cdf, r);
+  if(label<0){
+    label=0;
+  }
   return label;
 }

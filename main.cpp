@@ -11,6 +11,7 @@
 #include "mesh.hpp"
 #include "poly.hpp"
 #include "mincut.hpp"
+#include "kmeans.hpp"
 #include <string.h>
 #include <sstream>
 #include "mesh_query.h"
@@ -217,9 +218,9 @@ void* iterate(void* arg){
     int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  wS=30;
+  wS=3;
   wI=1;
-  wV0=1;
+  wV0=10;
   wPt=0.5;
 
   vW=1;
@@ -232,7 +233,8 @@ void* iterate(void* arg){
   for(int ii=0;ii<ITER;ii++){
     wPt+=1;
     printf("iter %d\n",ii);
-    runMincut(*m);
+   // runMincut(*m);
+    runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);
@@ -286,7 +288,6 @@ int main(int argc, char** argv)
       nLabel=atoi(argv[ii]);
     }
     if(strcmp(argv[ii],"-r")==0){
-      ii++;
       run=true;
     }
     if(strcmp(argv[ii],"-t")==0){

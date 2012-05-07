@@ -22,7 +22,6 @@ void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
   float mx = -1;
   for (unsigned int ii=0;ii<m.t.size();ii++){
     datac[ii].resize(nLabel);
-    real_t area=m.area(m.t[ii]);
     for (int jj =0 ;jj<nLabel;jj++){
       Vec3 plane_d = plane[jj].n.dot(plane[jj].c);
       Vec3 d = m.t[ii].c.dot(plane[jj].c);
@@ -62,13 +61,11 @@ void smooth_cost(Mesh& m,
   float mx = -1;
 
   for(unsigned int ii=0;ii< m.t.size();ii++){
-    real_t area1=m.area(m.t[ii]);
     for(unsigned int nbr=0;nbr<m.adjMat[ii].size();nbr++ ){
       unsigned int nbrIdx = m.adjMat[ii][nbr];
       if(nbrIdx<ii){
 	      continue;
       }
-      real_t area2=m.area(m.t[nbrIdx]);
       float cost = distance( m.t[ii], m.t[nbrIdx]);//(area1+area2)*
       cost = 1/(1+cost);
       smoothc[std::make_pair(ii,nbrIdx)]=cost;
@@ -179,6 +176,7 @@ void bfs(Mesh & m)
   }
 }
 int MC_ITER=5;
+
 void runMincut(Mesh &mesh)
 {
   std::vector<std::vector<float> >datac;
