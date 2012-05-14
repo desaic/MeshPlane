@@ -17,7 +17,12 @@
 #include "mesh_query.h"
 #include "bp.hpp"
 #include <imageio.h>
+#include "saliency.hpp"
 static Mesh * m;
+
+static int planeId=0;
+static bool draw_tex=false;
+static bool draw_uv=false;
 //static Poly * p;
 struct Cam{
   Cam():rotx(0),roty(0){
@@ -48,10 +53,15 @@ void init(void)
   GLfloat white[]={1.0,1.0,1.0,1.0};
   glLightfv (GL_LIGHT1, GL_DIFFUSE, white);
   glLightfv (GL_LIGHT1, GL_SPECULAR, white);
+
+
+  if(draw_tex||draw_uv){
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-0.5,0.5,-0.5,0.5,10,0.1);
+  }
 }
 
-static int planeId=0;
-static bool draw_tex=false;
 /*  Here is where the light position is reset after the modeling
  *  transformation (glRotated) is called.  This places the
  *  light at a new position in world coordinates.  The cube
@@ -69,7 +79,15 @@ void display(void)
       std::stringstream ss;
       ss<<planeId<<".png";
       imageio_save_screenshot(ss.str().c_str());
-
+      planeId++;
+    }
+    return;
+  }
+  else if(draw_uv){
+    m->draw_tex();
+    glFlush();
+    if(planeId==0){
+      imageio_save_screenshot("remap_tex.png");
       planeId++;
     }
     return;
@@ -122,8 +140,11 @@ void reshape (int w, int h)
   glViewport (0, 0, (GLsizei) w, (GLsizei) h);
   glMatrixMode (GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(40.0, (GLfloat) w/(GLfloat) h, 1.0, 20.0);
-//  glOrtho(-1,1,-1,1,10,0.1);
+  if(draw_tex||draw_uv){
+    glOrtho(-0.5,0.5,-0.5,0.5,10,0.1);
+  }else{
+    gluPerspective(40.0, (GLfloat) w/(GLfloat) h, 1.0, 20.0);
+  }
 }
 
 GLdouble  norm(GLdouble * v)
@@ -215,23 +236,22 @@ void animate(int t)
 #include "cgd.hpp"
 extern int minc_nlabel;
 void* iterate(void* arg){
-    int ITER=100;
+  int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  wS=30;
+  wS=1;
   wI=1;
-  wV0=10;
+  wV0=5;
   wPt=0.5;
-
-  vW=1;
-  dataCostW=300;
-  smoothW=250;
-	distw=1;
+  vW=2;
+  dataCostW=3500;
+  smoothW=2000;
+  saliency_weight=10;
+	distw=1.0;
   BP bp(*m);
   m->compute_plane();
-
   for(int ii=0;ii<ITER;ii++){
-    wPt+=1;
+    wPt+=2;
     printf("iter %d\n",ii);
     runMincut(*m);
     //runKmeans(*m);
@@ -268,20 +288,14 @@ int main(int argc, char** argv)
     exit(0);
   }
   glutInit(&argc, argv);
-  glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH|GLUT_ALPHA );
-  glutInitWindowSize (500, 500);
-  glutInitWindowPosition (100, 100);
-  glutCreateWindow (argv[0]);
-  init ();
-  glutDisplayFunc(display);
-  glutReshapeFunc(reshape);
-  glutMouseFunc(mouse);
-  glutKeyboardFunc(keyboard);
-  glutTimerFunc(0.1, animate, 0);
   int nLabel=50;
   bool run=false;
+  bool copy_uv=false;
   const char * tex_file="../bunny_tex1.png";
   const char * label_file="";
+  const char * uvfile="";
+  const char * salfile="";
+  const char * usrfile="";
   for(int ii=0;ii<argc;ii++){
     if(strcmp(argv[ii], "-k")==0){
       ii++;
@@ -298,10 +312,47 @@ int main(int argc, char** argv)
       ii++;
       label_file=argv[ii];
     }
+    if(strcmp(argv[ii],"-uv")==0){
+      draw_uv=true;
+    }
+    if(strcmp(argv[ii],"-tex")==0){
+      draw_tex=true;
+    }
+    if(strcmp(argv[ii],"-uvfile")==0){
+      ii++;
+      uvfile=argv[ii];
+    }
+    if(strcmp(argv[ii],"-copyuv")==0){
+      copy_uv=true;
+    }
+    if(strcmp(argv[ii],"-sal")==0){
+      ii++;
+      salfile=argv[ii];
+    }
+    if(strcmp(argv[ii],"-usr")==0){
+      ii++;
+      usrfile=argv[ii];
+    }
   }
 
+  glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH|GLUT_ALPHA );
+  if(draw_tex||draw_uv){
+    glutInitWindowSize (1800, 1800);
+  }else{
+    glutInitWindowSize (600, 600);
+  }
+  //glutInitWindowPosition (100, 100);
+  glutCreateWindow (argv[0]);
+  init ();
+  glutDisplayFunc(display);
+  glutReshapeFunc(reshape);
+  glutMouseFunc(mouse);
+  glutKeyboardFunc(keyboard);
+  glutTimerFunc(0.1, animate, 0);
+
+
   m=new Mesh (argv[1],nLabel);
-  //  m->load_ptex("bull.ptx");
+  // m->load_ptex("bull.ptx");
   m->load_tex(tex_file);
   minc_nlabel=nLabel;
   if(label_file[0]){
@@ -312,9 +363,37 @@ int main(int argc, char** argv)
       m->t[ii].label=mtemp.t[ii].label;
     }
   }
-  m->compute_plane();
-//  m->save_plane("plane.txt");
 
+  if(uvfile[0]){
+    Mesh * uvmesh=new Mesh(uvfile,1);
+    m->remap_tex=uvmesh;
+
+    if(copy_uv){
+      m->tex=uvmesh->tex;
+      for(size_t ii=0;ii<m->t.size();ii++){
+        for(int jj=0;jj<3;jj++){
+          m->t[ii].texId[jj]=uvmesh->t[ii].texId[jj];
+        }
+      }
+    }
+    m->save_obj("remap_tex.obj");
+  }
+
+  if(salfile[0]){
+    saliency_map(salfile,*m);
+  }
+  if(usrfile[0]){
+    usr_map(usrfile,*m);
+  }
+  m->compute_plane();
+  if(draw_tex||draw_uv){
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-0.5,0.5,-0.5,0.5,10,0.1);
+  }
+
+  m->save_plane("plane.txt");
+  //draw_tex=true;
   if(run){
     pthread_t thread;
     pthread_create(&thread, 0, iterate,(void*)m);

@@ -229,9 +229,8 @@ bool imageio_save_image(const char *fileName, unsigned char *buffer,
 bool imageio_save_screenshot(const char *fileName)
 {
     int width, height;
-
-width = glutGet(GLUT_WINDOW_WIDTH);
-height = glutGet(GLUT_WINDOW_HEIGHT);
+    width = glutGet(GLUT_WINDOW_WIDTH);
+    height = glutGet(GLUT_WINDOW_HEIGHT);
     unsigned char *buffer = new unsigned char[width * height * 4];
     if (!buffer)
         return false;

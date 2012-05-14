@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string.h>
 #include "imageio.h"
+#include "util.h"
 bool contains(int * a ,  int x, size_t size)
 {
   for(size_t ii=0; ii<size; ii++) {
@@ -23,23 +24,6 @@ bool contains(int * a ,  int x, size_t size)
   }
   return false;
 }
-
-struct Edge {
-  std::pair<int,int >e;
-  Edge(int a=0, int b=0 ) {
-    if(a>b) {
-      int tmp =a;
-      a=b;
-      b=tmp;
-    }
-    e.first=a;
-    e.second=b;
-  }
-  bool operator ==(const Edge & _e) {
-    return e==_e.e;
-  }
-};
-
 struct LabeledEdge {
   std::pair<int,int >e;
   int label;
@@ -68,13 +52,6 @@ struct LabeledEdge {
   }
 };
 
-
-class EdgeCmp {
-public:
-  bool operator()(const Edge & a, const Edge & b) {
-    return a.e<b.e;
-  }
-};
 
 void Mesh::save(const char * filename)
 {
@@ -116,7 +93,7 @@ bool Mesh::self_intersect()
     }
   }
   MeshObject * mo = construct_mesh_object( v.size() , vertex , t.size(), trig);
-  std::map<Edge, bool, EdgeCmp> m;
+  std::map<EdgeId, bool> m;
   double point0[3];
   double point1[3];
   int triangle_index;
@@ -130,7 +107,7 @@ bool Mesh::self_intersect()
         point0[kk]=v[a][kk];
         point1[kk]=v[b][kk];
       }
-      Edge e(a,b);
+      EdgeId e(a,b);
       if(m[e]) {
         continue;
       }
@@ -154,6 +131,9 @@ void Mesh::get_normal_center()
     Vec3 b=v[tt[2]]-v[tt[0]];
     tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
     tt.A=tt.n.norm();
+	if(tt.A<0.000001){
+		std::cout<<"bad trig\n";
+	}
     if(tt.A>max_area){
       max_area=tt.A;
     }
@@ -323,7 +303,7 @@ void Mesh::compute_plane()
     }
   }
   get_normal_center();
-  randcenter(*this, planes, nLabel);
+  get_plane(*this, planes);
   std::vector<bool>processed(t.size());
   for(size_t ii=0; ii<t.size(); ii++) {
     if(processed[ii]){
@@ -426,6 +406,8 @@ void Mesh::load_tex(const char * filename) {
                   GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
                width,  height,  0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+  printf("gl error %d\n",glGetError());
+  printf("max size %d\n",GL_MAX_TEXTURE_SIZE);
 }
 void Mesh::load_ptex(const char * filename)
 {
@@ -446,6 +428,8 @@ void Mesh::save_plane(const char * filename)
       continue;
     }
     Vec3 v0=v[lines[ii][0][0]];
+//    Vec3 v1=v[lines[ii][0][1]];
+//    Vec3 v2=v[lines[ii][0][2]];
 
     Vec3 ax, ay;
     Vec3 n=planes[ii].n;
@@ -637,8 +621,42 @@ void Mesh::read_ply2(std::ifstream&f)
   nLabel++;
 
 }
+
+void Mesh::save_obj(const char * filename)
+{
+  std::ofstream out(filename);
+  if(!out.good()){
+    std::cout<<"cannot open output file"<<filename<<"\n";
+    return;
+  }
+  std::string vTok("v");
+  std::string fTok("f");
+  std::string texTok("vt");
+  char bslash='/';
+  std::string tok;
+  for(size_t ii=0;ii<v.size();ii++){
+    out<<vTok<<" "<<v[ii][0]<<" "<<v[ii][1]<<" "<<v[ii][2]<<"\n";
+  }
+  if(tex.size()>0){
+    for(size_t ii=0;ii<tex.size();ii++){
+      out<<texTok<<" "<<tex[ii][0]<<" "<<tex[ii][1]<<"\n";
+    }
+    for(size_t ii=0;ii<t.size();ii++){
+      out<<fTok<<" "<<t[ii][0]+1<<bslash<<t[ii].texId[0]+1<<" "
+      <<t[ii][1]+1<<bslash<<t[ii].texId[1]+1<<" "
+      <<t[ii][2]+1<<bslash<<t[ii].texId[2]+1<<"\n";
+    }
+  }else{
+    for(size_t ii=0;ii<t.size();ii++){
+      out<<fTok<<" "<<t[ii][0]+1<<" "<<t[ii][1]+1<<" "<<t[ii][2]+1<<"\n";
+    }
+  }
+
+  out.close();
+}
+
 Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel),highlight(100),ptx(0),tex_buf(0)
+  :nLabel(_nLabel),highlight(100),remap_tex(0),ptx(0),tex_buf(0)
 {
   std::ifstream f ;
   f.open(filename);
@@ -770,22 +788,24 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
-// glDisable(GL_LIGHTING);
-  glBegin(GL_TRIANGLES);
-  GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
-  GLfloat ambient[4]= {0.1f,0.1f,0.1f,1.0f};
+  glDisable(GL_LIGHTING);
+  //glDisable(GL_TEXTURE_2D);
 
-  glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
-  glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
-  GLfloat s=10;
-  glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
+  glBegin(GL_TRIANGLES);
+  //GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
+  //GLfloat ambient[4]= {0.1f,0.1f,0.1f,1.0f};
+
+//  glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
+//  glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
+//  GLfloat s=10;
+//  glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
   if(tex_buf) {
     glBindTexture(GL_TEXTURE_2D,texture);
   }
 
   for(unsigned int ii=0; ii<t.size(); ii++) {
-    int l = t[ii].label;
-    /*    if(ptx && (int)ii< ptx->numFaces()){
+   /* int l = t[ii].label;
+        if(ptx && (int)ii< ptx->numFaces()){
           float ptxColor[4];
           ptx->getPixel(ii,0,0,ptxColor,0,4);
           glColor3f(ptxColor[0],ptxColor[1],ptxColor[2]);
@@ -793,9 +813,17 @@ void Mesh::draw(std::vector<Vec3>&v)
           glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
         }
         else{
-      */
 
-    Vec3 a = v[t[ii][1]] - v[t[ii][0]];
+    real_t sal=0;
+    for(size_t jj=0;jj<adjMat[ii].size();jj++){
+      EdgeId eid(ii,adjMat[ii][jj]);
+      if(usr_weit.find(eid)!=usr_weit.end()){
+        sal+=usr_weit[eid];
+      }
+    }
+    sal/=2;
+    glColor3f(sal,sal,sal);
+*/    Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
     b= b/b.norm();
@@ -812,9 +840,9 @@ void Mesh::draw(std::vector<Vec3>&v)
       glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
     } else {
-    GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
-    glColor3f(color[l][0],color[l][1],color[l][2]);
-    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+      //GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
+      //glColor3f(color[l][0],color[l][1],color[l][2]);
+      //glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
@@ -859,15 +887,58 @@ void Mesh::draw(std::vector<Vec3>&v)
     glEnd();
   */
 }
+
+void Mesh::draw_tex()
+{
+  if(!tex_buf || tex.size()==0) {
+    return;
+  }
+
+  glDisable(GL_LIGHTING);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glTranslatef(-0.5,-0.5,0);
+  glBegin(GL_TRIANGLES);
+  if(tex_buf) {
+    glBindTexture(GL_TEXTURE_2D,texture);
+  }
+
+  for(unsigned int ii=0; ii<t.size(); ii++) {
+    if(remap_tex==0){
+      glTexCoord2f(tex[t[ii].texId[0]][0],tex[t[ii].texId[0]][1]);
+      glVertex3f(tex[t[ii].texId[0]][0],tex[t[ii].texId[0]][1],-1);
+
+      glTexCoord2f(tex[t[ii].texId[1]][0],tex[t[ii].texId[1]][1]);
+      glVertex3f(tex[t[ii].texId[1]][0],tex[t[ii].texId[1]][1],-1);
+
+      glTexCoord2f(tex[t[ii].texId[2]][0],tex[t[ii].texId[2]][1]);
+      glVertex3f(tex[t[ii].texId[2]][0],tex[t[ii].texId[2]][1],-1);
+    }else{
+      glTexCoord2f(tex[t[ii].texId[0]][0],tex[t[ii].texId[0]][1]);
+      glVertex3f(remap_tex->tex[remap_tex->t[ii].texId[0]][0],
+                 remap_tex->tex[remap_tex->t[ii].texId[0]][1],-1);
+
+      glTexCoord2f(tex[t[ii].texId[1]][0],tex[t[ii].texId[1]][1]);
+      glVertex3f(remap_tex->tex[remap_tex->t[ii].texId[1]][0],
+                 remap_tex->tex[remap_tex->t[ii].texId[1]][1],-1);
+
+      glTexCoord2f(tex[t[ii].texId[2]][0],tex[t[ii].texId[2]][1]);
+      glVertex3f(remap_tex->tex[remap_tex->t[ii].texId[2]][0],
+                 remap_tex->tex[remap_tex->t[ii].texId[2]][1],-1);
+    }
+  }
+  glEnd();
+}
+
 void Mesh::drawLines()
 {
   glDisable(GL_LIGHTING);
+  glDisable(GL_TEXTURE_2D);
   glBegin(GL_LINES);
-  glColor3f(0.9,0.9,0.4);
+  glColor3f(0.9,0.9,0.9);
   pthread_mutex_lock(&meshm);
 
   for(size_t ii=0; ii<lines.size(); ii++) {
-
     for(size_t jj=0; jj<lines[ii].size(); jj++) {
       for(size_t kk=0; kk<lines[ii][jj].size(); kk++) {
         size_t kk1 = kk+1;
@@ -876,6 +947,7 @@ void Mesh::drawLines()
         }
         int v0=lines[ii][jj][kk];
         int v1=lines[ii][jj][kk1];
+
         glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
         glVertex3f(v[v1][0],v[v1][1],v[v1][2]);
 
@@ -893,6 +965,7 @@ void Mesh::drawLines()
   }
   pthread_mutex_unlock(&meshm);
   glEnd();
+  glEnable(GL_TEXTURE_2D);
   glEnable(GL_LIGHTING);
 }
 bool is_nbr(Trig & a, Trig&b, int vert)
@@ -947,6 +1020,12 @@ void Mesh::adjlist()
     }
   }
 }
+
+void update_distance(std::vector<real_t > & dist,
+                      std::vector<real_t > & cdf,
+                      std::vector<Plane> & plane,
+                      Mesh & m, int ll);
+
 #include "randomc.h"
 //pick random triangles as centers of clusters
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
@@ -954,6 +1033,10 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
   std::vector<int>count;
   plane.resize(nLabel);
   count.resize(m.t.size());
+  std::vector<real_t > dist(m.t.size(), 0.0f) ;
+  std::vector<real_t > cdf(m.t.size(),0.0f);
+  real_t sum=0;
+  real_t totalA=0;
   for (unsigned int ii=0; ii<m.t.size(); ii++) {
     size_t ll = m.t[ii].label;
     if(ll>=plane.size()) {
@@ -961,6 +1044,11 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     }
     plane[ll].n += m.t[ii].n;
     plane[ll].c += m.t[ii].c;
+    plane[ll].A+=m.t[ii].A;
+    totalA+=m.t[ii].A;
+    dist[ii]=mcdistance(plane[ll],m.t[ii]);
+    sum+=dist[ii]*dist[ii];
+    cdf[ii]=sum;
     count[ll]++;
   }
 
@@ -968,10 +1056,19 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     if(count[ii]>0) {
       plane[ii].n/=plane[ii].n.norm();
       plane[ii].c/=count[ii];
-    } else {
-      int r = rndg.IRandom(0, m.v.size()-1 );
+
+    }
+  }
+  for(int ii=0; ii<nLabel; ii++) {
+    if(count[ii]!=0 && plane[ii].A<totalA/300.0){
+      std::cout<<"tinyplane\n";
+    }
+    if(count[ii]==0 || plane[ii].A<totalA/300.0){
+
+      int r=sample_cdf(cdf);
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
+      update_distance(dist, cdf, plane,m,ii);
     }
   }
 }
@@ -994,8 +1091,10 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
   }
 
   for(int ii=0; ii<m.nLabel; ii++) {
-    plane[ii].c/=cnt[ii];
-    // plane[ii].n/=cnt[ii];
-    plane[ii].n/=plane[ii].n.norm();
+    if(cnt[ii]>0){
+      plane[ii].c/=cnt[ii];
+      // plane[ii].n/=cnt[ii];
+      plane[ii].n/=plane[ii].n.norm();
+    }
   }
 }

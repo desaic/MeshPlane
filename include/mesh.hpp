@@ -21,9 +21,39 @@ struct Trig{
 struct Plane{
   Vec3 c;
   Vec3 n;
-  Plane(){};
+  real_t A;
+  Plane():A(0){};
   ~Plane(){};
 };
+
+struct EdgeId{
+  int v[2];
+  int & operator[](int idx){
+    return v[idx];
+  }
+  int operator[](int idx)const {
+    return v[idx];
+  }
+  EdgeId(int v0=0,int v1=0){
+    if(v0>v1){
+      v[0]=v1;
+      v[1]=v0;
+    }else{
+      v[0]=v0;
+      v[1]=v1;
+    }
+  }
+  bool operator<(const EdgeId & ea)const{
+    if(v[0]<ea.v[0]){
+      return true;
+    }
+    if(v[0]==ea.v[0]){
+      return v[1]<ea.v[1];
+    }
+    return false;
+  }
+};
+
 #include <map>
 class Mesh{
 public:
@@ -37,7 +67,7 @@ public:
   std::vector<Vec3>n;
   std::vector<Vec3>v4;
   std::vector<std::vector<int> >  adjMat;
-  Mesh():v(0),t(0){}
+  Mesh():v(0),t(0),remap_tex(0){}
   Mesh(const char * filename,int _nLabel=50);
   void adjlist();
   void draw(std::vector<Vec3>&v);
@@ -54,9 +84,15 @@ public:
   void read_ply(std::ifstream & f);
   void read_ply2(std::ifstream & f);
   void read_obj(std::ifstream & f);
-
+  void save_obj(const char * filename);
   void load_tex(const char * filename);
   void load_ptex(const char * filename);
+  void draw_tex();
+
+  Mesh * remap_tex;
+
+  std::map<EdgeId, real_t > saliency;
+  std::map<EdgeId, real_t > usr_weit;
 private:
   void compute_norm();
   void fix_inner_cluster();
@@ -70,5 +106,6 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
 /**@param m assume triangle norms and centers are already computed
  */
 void get_plane(Mesh & m , std::vector<Plane> & plane);
+real_t mcdistance( Plane & p, Trig &t);
 
 #endif

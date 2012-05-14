@@ -5,6 +5,7 @@
 extern float dataCostW;
 extern float smoothW;
 extern float distw;
+extern real_t saliency_weight;
 void runMincut(Mesh & m);
 extern int MC_ITER;
 #endif

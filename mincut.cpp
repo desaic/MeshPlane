@@ -1,14 +1,26 @@
 #include "mincut.hpp"
 #include <vector>
 #include <stdlib.h>
+#include "mesh.hpp"
 #include <map>
-#include <utility>
-#include "cgd.hpp"
 #define SWAP(a,b)  (a)^=(b);(b)^=(a);(a)^=(b);
 int minc_nlabel=50;
 float dataCostW=100;
 float smoothW=10;
 float distw = 10;
+real_t saliency_weight=1;
+real_t mcdistance( Plane & p, Trig &t)
+{
+
+  Vec3 plane_d = p.n.dot(p.c);
+      Vec3 d = t.c.dot(p.c);
+      real_t  cost = distw * (plane_d-d).L1n();
+      cost += (t.n- p.n).L1n();
+      cost /= (1+distw);
+      cost*=t.A;
+  return cost;
+}
+
 void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
 	       std::vector<std::vector< float > > & datac)
 {
@@ -23,18 +35,13 @@ void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
   for (unsigned int ii=0;ii<m.t.size();ii++){
     datac[ii].resize(nLabel);
     for (int jj =0 ;jj<nLabel;jj++){
-      Vec3 plane_d = plane[jj].n.dot(plane[jj].c);
-      Vec3 d = m.t[ii].c.dot(plane[jj].c);
-      float cost = distw * (plane_d-d).L1n();
-      cost += (m.t[ii].n- plane[jj].n).L1n();
-      cost /= (1+distw);
-      cost*=m.t[ii].A;
+      real_t cost = mcdistance(plane[jj],m.t[ii]);
       datac[ii][jj]=cost;
       if(mn<0 || mn>cost){
-	mn=cost;
+	      mn=cost;
       }
       if(mx<0 || mx<cost){
-	mx=cost;
+	      mx=cost;
       }
     }
   }
@@ -47,7 +54,7 @@ void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
   }
 }
 
-float distance( Trig & a, Trig &b)
+float mcdistance( Trig & a, Trig &b)
 {
   float d = (a.n-b.n).L1n();
   return d;
@@ -56,7 +63,7 @@ float distance( Trig & a, Trig &b)
    vertices i and j. i < j.
  */
 void smooth_cost(Mesh& m,
-		 std::map<std::pair< int , int> , float > & smoothc)
+		 std::map<EdgeId , float > & smoothc)
 {
   float mn = -1;
   float mx = -1;
@@ -67,26 +74,39 @@ void smooth_cost(Mesh& m,
       if(nbrIdx<ii){
 	      continue;
       }
-      float cost = distance( m.t[ii], m.t[nbrIdx]);//(area1+area2)*
+      EdgeId eid(ii,nbrIdx);
+      float cost = ( m.t[ii].n - m.t[nbrIdx].n).L1n();//(area1+area2)*
       cost = 1/(1+cost);
+
+      if(m.saliency.find(eid) != m.saliency.end()){
+       real_t salw=(m.saliency[eid]);
+        cost+=salw*saliency_weight;
+      }
+      if(m.usr_weit.find(eid) != m.usr_weit.end()){
+        real_t usrw=(m.usr_weit[eid]);
+        cost+=usrw*saliency_weight;
+      }
+
       cost *=(m.t[ii].A+m.t[nbrIdx].A)/2;
-      smoothc[std::make_pair(ii,nbrIdx)]=cost;
+
+      smoothc[eid]=cost;
       if(mn<0 || mn>cost){
-	mn=cost;
+	      mn=cost;
       }
       if(mx<0 || mx<cost){
-	mx=cost;
+	      mx=cost;
       }
     }
   }
 
   float scale = mx-mn;
 
-  std::map<std::pair< int , int> , float >::iterator it;
+  std::map<EdgeId , float >::iterator it;
   for(it = smoothc.begin();it!=smoothc.end();it++){
     float cost = it->second;
     cost = (cost - mn)/scale;
     it->second = cost;
+
   }
 }
 
@@ -103,20 +123,16 @@ public:
 struct SmoothCostMap
   :public GCoptimization::SmoothCostFunctor{
 public:
-  SmoothCostMap(std::map<std::pair<int, int>,float > *_smoothc):smoothc(_smoothc){}
+  SmoothCostMap(std::map<EdgeId,float > *_smoothc):smoothc(_smoothc){}
   inline GCoptimization::EnergyTermType compute
   (GCoptimization::SiteID s1,
    GCoptimization::SiteID s2,
    GCoptimization::LabelID l1,
    GCoptimization::LabelID l2){
     if(l1==l2){return 0;}
-    int is1=s1,is2=(int)s2;
-    if(is1>is2){
-      SWAP(is1,is2);
-    }
-    return (int)((*smoothc)[std::make_pair(is1,is2)]);
+    return (int)((*smoothc)[EdgeId(s1,s2)]);
   }
-  std::map<std::pair<int, int>,float > *smoothc;
+  std::map<EdgeId,float > *smoothc;
 };
 
 void scale(std::vector<std::vector<float> >&a, float scale)
@@ -128,9 +144,9 @@ void scale(std::vector<std::vector<float> >&a, float scale)
   }
 }
 
-void scale(std::map<std::pair<int,int>,float >&a, float scale)
+void scale(std::map<EdgeId,float >&a, float scale)
 {
-  std::map<std::pair<int,int>,float >::iterator it;
+  std::map<EdgeId,float >::iterator it;
   for(it = a.begin();it!=a.end();it++){
     it->second *= scale;
   }
@@ -182,7 +198,7 @@ int MC_ITER=5;
 void runMincut(Mesh &mesh)
 {
   std::vector<std::vector<float> >datac;
-  std::map<std::pair<int, int> , float >smoothc;
+  std::map<EdgeId , float >smoothc;
   std::vector<Plane> plane;
 
   GCoptimizationGeneralGraph * gc = new GCoptimizationGeneralGraph(mesh.t.size(),minc_nlabel);

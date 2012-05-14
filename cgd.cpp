@@ -212,10 +212,11 @@ void vertex_mat(Mesh &m , float vW0, CCS& ccs , std::vector<double> & bb)
 
   std::vector<bool>processed (m.v.size());
   std::vector<bool>important(m.v.size());
-
+  std::vector<real_t > vertArea(m.v.size());
   for(size_t ii=0; ii<m.t.size(); ii++) {
     for(int vidx = 0; vidx<3; vidx++) {
       int idx = m.t[ii][vidx];
+      vertArea[idx]+=m.t[ii].A;
       if(processed[idx]) {
         continue;
       }
@@ -265,6 +266,7 @@ void vertex_mat(Mesh &m , float vW0, CCS& ccs , std::vector<double> & bb)
     } else {
        f=vW0;
     }
+    f*=vertArea[idx];
     val[idx]=f;
     addrow(val,ccs,axis*nvar);
     bb.push_back(f*m.v0[idx][axis]);
