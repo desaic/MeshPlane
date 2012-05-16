@@ -18,8 +18,10 @@
 #include "bp.hpp"
 #include <imageio.h>
 #include "saliency.hpp"
+#include"quat.h"
 static Mesh * m;
 
+static Quat rot;
 static int planeId=0;
 static bool draw_tex=false;
 static bool draw_uv=false;
@@ -39,7 +41,7 @@ struct Cam{
 static Cam* cam;
 void init(void)
 {
-  glClearColor (0, 0, 0, 0.0);
+  glClearColor (0.5, 0.5, 9, 0.0);
   // glShadeModel (GL_SMOOTH);
   //glShadeModel (GL_FLAT );
   glEnable(GL_LIGHTING);
@@ -96,29 +98,35 @@ void display(void)
 	    cam->at[0],cam->at[1], cam->at[2],
 	    0.0, 1.0, 0.0);
 
-  GLfloat position[] = { 0.0, -.5, 2, 1.0 };
-  GLfloat position1[] = { 0.0, .5, -2, 1.0 };
+  GLfloat position[] = { -  1.0, -.5, 0, 1.0 };
+  GLfloat position1[] = { -1.0, .5, -1, 1.0 };
 
   glPushMatrix();
   glDisable(GL_LIGHTING);
   glColor3f(1,1,1);
   glTranslatef(position[0],position[1],position[2]);
-  glutWireCube(0.2);
+ // glutWireCube(0.2);
   glPopMatrix();
 
   glPushMatrix();
   glTranslatef(position1[0],position1[1],position1[2]);
-  glutWireCube(0.2);
+ // glutWireCube(0.2);
   glEnable(GL_LIGHTING);
   glPopMatrix();
 
   glLightfv (GL_LIGHT0, GL_POSITION, position);
   glLightfv (GL_LIGHT1, GL_POSITION, position1);
 
+  Vec3 axis ;
+  real_t angle;
   glPushMatrix();
   glTranslatef(-1,0,0);
-  glRotatef(180*cam->rotx/3.14,1,0,0);
-  glRotatef(180*cam->roty/3.14,0,1,0);
+  rot.to_angle_axis(axis,&angle);
+  angle=angle*180/3.14159;
+ // std::cout<<angle<<"\n";
+ // std::cout<<axis[0]<<" "<<axis[1]<<" "<<axis[2]<<"\n";
+
+  glRotatef(angle,axis[0],axis[1],axis[2]);
   m->draw(m->v);
 
 
@@ -126,8 +134,7 @@ void display(void)
 
   glPushMatrix();
   glTranslatef(1,0,0);
-  glRotatef(180*cam->rotx/3.14,1,0,0);
-  glRotatef(180*cam->roty/3.14,0,1,0);
+  glRotatef(angle,axis[0],axis[1],axis[2]);
 
 //    m->draw(m->v0);
   m->drawLines();
@@ -215,17 +222,43 @@ void keyboard(unsigned char key,int x, int y)
   glutPostRedisplay();
 }
 
+int ldown;
+int oldx,oldy;
+
 void mouse(int button, int state, int x, int y)
 {
   switch (button) {
   case GLUT_LEFT_BUTTON:
-
+    switch (state){
+    case GLUT_DOWN:
+      ldown=1;
+      oldx=x;
+      oldy=y;
+      break;
+    case GLUT_UP:
+      ldown=0;
+      break;
+    }
     break;
   default:
     break;
   }
 }
+void motion (int x, int y)
+{
 
+  if(ldown){
+    Quat q(Vec3(0,1,0),(x-oldx)/60.0);
+    rot =q*rot;
+    rot=rot.normalize();
+    q=Quat(Vec3(1,0,0),(y-oldy)/60.0);
+    rot =q*rot;
+    rot=rot.normalize();
+    oldx=x;
+    oldy=y;
+  }
+
+}
 void animate(int t)
 {
   glutTimerFunc(60, animate, 0);
@@ -245,7 +278,7 @@ void* iterate(void* arg){
   wPt=0.5;
   vW=2;
   dataCostW=3500;
-  smoothW=2000;
+  smoothW=1500;
   saliency_weight=10;
 	distw=1.0;
   BP bp(*m);
@@ -291,7 +324,7 @@ int main(int argc, char** argv)
   int nLabel=50;
   bool run=false;
   bool copy_uv=false;
-  const char * tex_file="../bunny_tex1.png";
+  const char * tex_file="";
   const char * label_file="";
   const char * uvfile="";
   const char * salfile="";
@@ -347,13 +380,16 @@ int main(int argc, char** argv)
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);
   glutMouseFunc(mouse);
+  glutMotionFunc(motion);
   glutKeyboardFunc(keyboard);
   glutTimerFunc(0.1, animate, 0);
 
-
+  srand(123456);
   m=new Mesh (argv[1],nLabel);
   // m->load_ptex("bull.ptx");
-  m->load_tex(tex_file);
+  if(tex_file[0]){
+    m->load_tex(tex_file);
+  }
   minc_nlabel=nLabel;
   if(label_file[0]){
     Mesh mtemp(label_file,1);
@@ -362,6 +398,7 @@ int main(int argc, char** argv)
     for(size_t ii=0;ii<m->t.size();ii++){
       m->t[ii].label=mtemp.t[ii].label;
     }
+    m->assign_color();
   }
 
   if(uvfile[0]){
@@ -393,6 +430,7 @@ int main(int argc, char** argv)
   }
 
   m->save_plane("plane.txt");
+
   //draw_tex=true;
   if(run){
     pthread_t thread;
@@ -404,6 +442,8 @@ int main(int argc, char** argv)
   pthread_detach(hlthread);
 
   cam=new Cam();
+  rot=Quat(Vec3(-0.484781 ,0.701476 ,0.522417) ,10.6975*3.141592/180);
+  ldown=0;
   glutMainLoop();
   return 0;
 //p=new Poly(m);

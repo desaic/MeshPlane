@@ -49,10 +49,15 @@ struct Vec3{
   real_t L2n(){
     return (x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
   }
-  double norm(){
+
+  Vec3 unit() const
+    {
+        return *this / norm();
+    }
+  double norm()const{
     return std::sqrt((double)(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]));
   }
-  Vec3 operator/(real_t a){
+  Vec3 operator/(real_t a)const{
     return Vec3(x[0]/a,x[1]/a,x[2]/a);
   }
   Vec3& operator/=(real_t a){

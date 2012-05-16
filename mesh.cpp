@@ -788,8 +788,8 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
-  glDisable(GL_LIGHTING);
-  //glDisable(GL_TEXTURE_2D);
+ // glDisable(GL_LIGHTING);
+ // glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
   //GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
@@ -804,7 +804,8 @@ void Mesh::draw(std::vector<Vec3>&v)
   }
 
   for(unsigned int ii=0; ii<t.size(); ii++) {
-   /* int l = t[ii].label;
+   unsigned int  l = t[ii].label;
+   /*
         if(ptx && (int)ii< ptx->numFaces()){
           float ptxColor[4];
           ptx->getPixel(ii,0,0,ptxColor,0,4);
@@ -821,9 +822,16 @@ void Mesh::draw(std::vector<Vec3>&v)
         sal+=usr_weit[eid];
       }
     }
-    sal/=2;
+    sal/=3;
+    if(sal<0.2){
+      sal=0.2;
+    }
+    sal=1-sal;
     glColor3f(sal,sal,sal);
-*/    Vec3 a = v[t[ii][1]] - v[t[ii][0]];
+
+    GLfloat diffuse[4]= {sal,sal,sal,1.0f};
+    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);*/
+    Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
     b= b/b.norm();
@@ -840,10 +848,11 @@ void Mesh::draw(std::vector<Vec3>&v)
       glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
     } else {
-      //GLfloat diffuse[4]= {color[l][0],color[l][1],color[l][2],1.0f};
-      //glColor3f(color[l][0],color[l][1],color[l][2]);
-      //glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
-
+      if(l<color.size()){
+        GLfloat clr[4]= {color[l][0],color[l][1],color[l][2],1.0f};
+        glColor3f(color[l][0],color[l][1],color[l][2]);
+        glMaterialfv(GL_FRONT,GL_DIFFUSE,clr);
+      }
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
       glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
@@ -935,7 +944,7 @@ void Mesh::drawLines()
   glDisable(GL_LIGHTING);
   glDisable(GL_TEXTURE_2D);
   glBegin(GL_LINES);
-  glColor3f(0.9,0.9,0.9);
+  glColor3f(0.19,0.19,0.29);
   pthread_mutex_lock(&meshm);
 
   for(size_t ii=0; ii<lines.size(); ii++) {
