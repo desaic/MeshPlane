@@ -13,23 +13,20 @@ real_t mcdistance( Plane & p, Trig &t)
 {
 
   Vec3 plane_d = p.n.dot(p.c);
-      Vec3 d = t.c.dot(p.c);
+      Vec3 d = t.c.dot(p.n);
       real_t  cost = distw * (plane_d-d).L1n();
       cost += (t.n- p.n).L1n();
       cost /= (1+distw);
       cost*=t.A;
   return cost;
 }
-
 void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
 	       std::vector<std::vector< float > > & datac)
 {
   //recalculate center and normals for each face since the mesh is morphed
-
-  m.get_normal_center();
+	m.get_normal_center();
   randcenter(m,plane,nLabel);
   datac.resize(m.t.size());
-
   float mn = -1;
   float mx = -1;
   for (unsigned int ii=0;ii<m.t.size();ii++){
@@ -130,6 +127,10 @@ public:
    GCoptimization::LabelID l1,
    GCoptimization::LabelID l2){
     if(l1==l2){return 0;}
+    if(smoothc->find(EdgeId(s1,s2))==smoothc->end()){
+      printf("not an edge\n");
+      return 0;
+    }
     return (int)((*smoothc)[EdgeId(s1,s2)]);
   }
   std::map<EdgeId,float > *smoothc;

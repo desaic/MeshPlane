@@ -269,22 +269,23 @@ void animate(int t)
 #include "cgd.hpp"
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=100;
+  int ITER=50;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
   wS=1;
   wI=1;
-  wV0=5;
+  wV0=1;
   wPt=0.5;
   vW=2;
   dataCostW=3500;
   smoothW=1500;
   saliency_weight=10;
 	distw=1.0;
-  BP bp(*m);
+
+ // BP bp(*m);
   m->compute_plane();
   for(int ii=0;ii<ITER;ii++){
-    wPt+=2;
+    wPt+=3;
     printf("iter %d\n",ii);
     runMincut(*m);
     //runKmeans(*m);
@@ -296,7 +297,7 @@ void* iterate(void* arg){
   wPt=2000;
   cgd(*m);
   m->save("planar_output.ply2");
-
+m->compute_plane();
   m->save_plane("plane.txt");
   return 0;
 }
@@ -442,7 +443,8 @@ int main(int argc, char** argv)
   pthread_detach(hlthread);
 
   cam=new Cam();
-  rot=Quat(Vec3(-0.484781 ,0.701476 ,0.522417) ,10.6975*3.141592/180);
+  rot=Quat(Vec3(0,0,1),0);
+  //rot=Quat(Vec3(-0.484781 ,0.701476 ,0.522417) ,10.6975*3.141592/180);
   ldown=0;
   glutMainLoop();
   return 0;

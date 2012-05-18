@@ -427,12 +427,32 @@ void Mesh::save_plane(const char * filename)
       out<<"\n";
       continue;
     }
+    if(lines[ii][0].size()<3){
+      continue;
+    }
+    int jj0=lines[ii][0].size()-1;
+    Vec3 n=Vec3(0,0,0);
+    for(size_t jj=0;jj<lines[ii][0].size();jj++){
+      for(int kk=0;kk<3;kk++){
+        int kk1 = (kk+1)%3;
+        int kk2 = (kk+2)%3;
+        n[kk] += (  v[lines[ii][0][jj0]] [kk1]
+                  - v[lines[ii][0][jj]] [kk1])*
+                  ( v[lines[ii][0][jj0]][kk2]
+                   +v[lines[ii][0][jj]] [kk2]);
+      }
+      jj0=jj;
+    }
+    n/=n.norm();
+    if(n.dot(planes[ii].n)<0){
+      n=-n;
+    }
+    //n=planes[ii].n;
     Vec3 v0=v[lines[ii][0][0]];
 //    Vec3 v1=v[lines[ii][0][1]];
 //    Vec3 v2=v[lines[ii][0][2]];
 
     Vec3 ax, ay;
-    Vec3 n=planes[ii].n;
     Vec3 arbit(1,0,0);
     if(std::abs(n[0])>0.9) {
       arbit=Vec3(0,1,0);
@@ -710,6 +730,7 @@ Mesh::Mesh(const char * filename, int _nLabel)
 
 void Mesh::assign_color()
 {
+  color.push_back(Vec3(0.3,0.3,0.3));
   int nc0=color.size();
   color.resize(nLabel);
   for (int ii=nc0; ii<nLabel; ii++) {
@@ -788,8 +809,8 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
- // glDisable(GL_LIGHTING);
- // glDisable(GL_TEXTURE_2D);
+  //glDisable(GL_LIGHTING);
+  //glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
   //GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
@@ -814,8 +835,8 @@ void Mesh::draw(std::vector<Vec3>&v)
           glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
         }
         else{
-
-    real_t sal=0;
+*/
+    real_t sal=1;
     for(size_t jj=0;jj<adjMat[ii].size();jj++){
       EdgeId eid(ii,adjMat[ii][jj]);
       if(usr_weit.find(eid)!=usr_weit.end()){
@@ -826,11 +847,11 @@ void Mesh::draw(std::vector<Vec3>&v)
     if(sal<0.2){
       sal=0.2;
     }
-    sal=1-sal;
+
     glColor3f(sal,sal,sal);
 
     GLfloat diffuse[4]= {sal,sal,sal,1.0f};
-    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);*/
+    glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
     Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
@@ -1075,6 +1096,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     if(count[ii]==0 || plane[ii].A<totalA/300.0){
 
       int r=sample_cdf(cdf);
+      m.t[r].label=ii;
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
       update_distance(dist, cdf, plane,m,ii);
@@ -1088,6 +1110,9 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
   plane.resize(m.nLabel);
   std::vector<float > cnt (m.nLabel,0);
   for(size_t ii=0; ii<m.t.size(); ii++) {
+    if(m.t[ii].A<0.000001){
+      continue;
+    }
     Vec3 a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
     Vec3 b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
     Vec3 n = a.cross(b);

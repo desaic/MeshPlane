@@ -7,7 +7,8 @@
 #include <GL/gl.h>
 //by default counterclockwise winding is front face
 struct Trig{
-  Trig():label(0){x[0]=0;x[1]=0;x[2]=0;x[3]=0;}
+  Trig():label(0){x[0]=0;x[1]=0;x[2]=0;x[3]=0;
+    texId[0]=0;texId[1]=0;texId[2]=0;}
   int & operator[](const int i) {return x[i];}
   int operator[](const int i)const {return x[i];}
   int x[4];
