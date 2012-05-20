@@ -269,18 +269,18 @@ void animate(int t)
 #include "cgd.hpp"
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=50;
+  int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
   wS=1;
   wI=1;
-  wV0=1;
+  wV0=30;
   wPt=0.5;
-  vW=2;
-  dataCostW=3500;
-  smoothW=1500;
-  saliency_weight=10;
-	distw=1.0;
+  vW=1;
+  dataCostW=10000;
+  smoothW=2300;
+  saliency_weight=5;
+	distw=1;
 
  // BP bp(*m);
   m->compute_plane();

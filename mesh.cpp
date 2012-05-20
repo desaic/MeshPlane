@@ -131,9 +131,9 @@ void Mesh::get_normal_center()
     Vec3 b=v[tt[2]]-v[tt[0]];
     tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
     tt.A=tt.n.norm();
-	if(tt.A<0.000001){
-		std::cout<<"bad trig\n";
-	}
+	//if(tt.A<0.000001){
+	//	std::cout<<"bad trig\n";
+	//}
     if(tt.A>max_area){
       max_area=tt.A;
     }
@@ -809,7 +809,7 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
-  //glDisable(GL_LIGHTING);
+  glDisable(GL_LIGHTING);
   //glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
@@ -1063,9 +1063,9 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
   std::vector<int>count;
   plane.resize(nLabel);
   count.resize(m.t.size());
-  std::vector<real_t > dist(m.t.size(), 0.0f) ;
-  std::vector<real_t > cdf(m.t.size(),0.0f);
-  real_t sum=0;
+ // std::vector<real_t > dist(m.t.size(), 0.0f) ;
+ // std::vector<real_t > cdf(m.t.size(),0.0f);
+  //real_t sum=0;
   real_t totalA=0;
   for (unsigned int ii=0; ii<m.t.size(); ii++) {
     size_t ll = m.t[ii].label;
@@ -1076,9 +1076,9 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     plane[ll].c += m.t[ii].c;
     plane[ll].A+=m.t[ii].A;
     totalA+=m.t[ii].A;
-    dist[ii]=mcdistance(plane[ll],m.t[ii]);
-    sum+=dist[ii]*dist[ii];
-    cdf[ii]=sum;
+  //  dist[ii]=mcdistance(plane[ll],m.t[ii]);
+  //  sum+=dist[ii]*dist[ii];
+  //  cdf[ii]=sum;
     count[ll]++;
   }
 
@@ -1090,16 +1090,16 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     }
   }
   for(int ii=0; ii<nLabel; ii++) {
-    if(count[ii]!=0 && plane[ii].A<totalA/300.0){
-      std::cout<<"tinyplane\n";
-    }
+    //if(count[ii]!=0 && plane[ii].A<totalA/300.0){
+    //  std::cout<<"tinyplane\n";
+    //}
     if(count[ii]==0 || plane[ii].A<totalA/300.0){
 
-      int r=sample_cdf(cdf);
+      int r=rndg.IRandom(0,m.t.size()-1);//sample_cdf(cdf);
       m.t[r].label=ii;
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
-      update_distance(dist, cdf, plane,m,ii);
+     // update_distance(dist, cdf, plane,m,ii);
     }
   }
 }
