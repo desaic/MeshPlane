@@ -12,7 +12,7 @@ LFLAGS =
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lGLU -lglut -lGL -lpthread -L lib -lmesh_query -lpng
+LIBS = -lGLEW -lGLU -lglut -lGL -lpthread -L lib -lmesh_query -lpng
 
 SRCS := $(wildcard *.cpp )
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))

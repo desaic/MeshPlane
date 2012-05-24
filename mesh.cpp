@@ -408,12 +408,6 @@ void Mesh::load_tex(const char * filename) {
   printf("gl error %d\n",glGetError());
   printf("max size %d\n",GL_MAX_TEXTURE_SIZE);
 }
-void Mesh::load_ptex(const char * filename)
-{
-  Ptex::String errMsg("cannot open ptx\n");
-  ptx=PtexTexture::open(filename,errMsg);
-}
-
 void Mesh::save_plane(const char * filename)
 {
   std::ofstream out;
@@ -675,7 +669,7 @@ void Mesh::save_obj(const char * filename)
 }
 
 Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel),highlight(1000),remap_tex(0),ptx(0),tex_buf(0),
+  :nLabel(_nLabel),highlight(1000),remap_tex(0),tex_buf(0),
   fbo(0)
 {
   std::ifstream f ;

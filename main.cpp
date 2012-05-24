@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#include "mesh.hpp"
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/freeglut.h>
@@ -8,7 +9,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "mesh.hpp"
 #include "poly.hpp"
 #include "mincut.hpp"
 #include "kmeans.hpp"
