@@ -19,6 +19,7 @@
 #include <imageio.h>
 #include "saliency.hpp"
 #include"quat.h"
+#include "cgd.hpp"
 static Mesh * m;
 
 static Quat rot;
@@ -32,7 +33,7 @@ struct Cam{
       eye[ii]=0.0;
       at[ii]=0.0;
     }
-    eye[2]=3;
+    eye[2]=2;
   }
   GLdouble eye[3];
   GLdouble at[3];
@@ -41,7 +42,7 @@ struct Cam{
 static Cam* cam;
 void init(void)
 {
-  glClearColor (0.5, 0.5, 9, 0.0);
+  glClearColor (1, 1, 1, 0.0);
   // glShadeModel (GL_SMOOTH);
   //glShadeModel (GL_FLAT );
   glEnable(GL_LIGHTING);
@@ -64,11 +65,8 @@ void init(void)
   }
 }
 
-/*  Here is where the light position is reset after the modeling
- *  transformation (glRotated) is called.  This places the
- *  light at a new position in world coordinates.  The cube
- *  represents the position of the light.
- */
+static int imgnum=0;
+bool running=false;
 void display(void)
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -94,12 +92,29 @@ void display(void)
     }
     return;
   }
+
+
+  if(running){
+
+    wPt+=3;
+    if(imgnum>230){
+      wPt+=1000;
+    }
+    if(imgnum%10==0){
+      runMincut(*m);
+      //runKmeans(*m);
+    }
+    m->compute_plane();
+    cgd(*m);
+
+  }
+
   gluLookAt(cam->eye[0], cam->eye[1],cam->eye[2],
 	    cam->at[0],cam->at[1], cam->at[2],
 	    0.0, 1.0, 0.0);
 
-  GLfloat position[] = { -  1.0, -.5, 0, 1.0 };
-  GLfloat position1[] = { -1.0, .5, -1, 1.0 };
+  GLfloat position[] = { 1.0, -1, 1, 1.0 };
+  GLfloat position1[] = { -1.0, -1, -1, 1.0 };
 
   glPushMatrix();
   glDisable(GL_LIGHTING);
@@ -120,11 +135,11 @@ void display(void)
   Vec3 axis ;
   real_t angle;
   glPushMatrix();
-  glTranslatef(-1,0,0);
+  //glTranslatef(-1,0,0);
   rot.to_angle_axis(axis,&angle);
   angle=angle*180/3.14159;
  // std::cout<<angle<<"\n";
- // std::cout<<axis[0]<<" "<<axis[1]<<" "<<axis[2]<<"\n";
+  //std::cout<<axis[0]<<" "<<axis[1]<<" "<<axis[2]<<"\n";
 
   glRotatef(angle,axis[0],axis[1],axis[2]);
   m->draw(m->v);
@@ -132,14 +147,25 @@ void display(void)
 
   glPopMatrix();
 
-  glPushMatrix();
-  glTranslatef(1,0,0);
-  glRotatef(angle,axis[0],axis[1],axis[2]);
+  //glPushMatrix();
+  //glTranslatef(1,0,0);
+  //glRotatef(angle,axis[0],axis[1],axis[2]);
 
 //    m->draw(m->v0);
-  m->drawLines();
+  //m->drawLines();
   glPopMatrix();
   glFlush ();
+
+  if(running){
+
+    char buf[32]="anim/";
+    sprintf(buf+5,"%04d",imgnum);
+    strcat(buf,".png");
+    imageio_save_screenshot(buf);
+    printf("%d\n",imgnum);
+    imgnum++;
+  }
+
 }
 
 void reshape (int w, int h)
@@ -259,17 +285,20 @@ void motion (int x, int y)
   }
 
 }
+
 void animate(int t)
 {
   glutTimerFunc(60, animate, 0);
+
   glutPostRedisplay();
+
 }
 
 #include <pthread.h>
-#include "cgd.hpp"
+
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=100;
+  int ITER=50;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
   wS=1;
@@ -278,26 +307,26 @@ void* iterate(void* arg){
   wPt=0.5;
   vW=1;
   dataCostW=10000;
-  smoothW=2300;
-  saliency_weight=5;
+  smoothW=2500;
+  saliency_weight=2;
 	distw=1;
 
  // BP bp(*m);
-  m->compute_plane();
+
   for(int ii=0;ii<ITER;ii++){
     wPt+=3;
     printf("iter %d\n",ii);
     runMincut(*m);
-    //runKmeans(*m);
+ //   runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);
 //    weighted_avg(*m);
-}
+  }
   wPt=2000;
   cgd(*m);
   m->save("planar_output.ply2");
-m->compute_plane();
+  m->compute_plane();
   m->save_plane("plane.txt");
   return 0;
 }
@@ -371,9 +400,9 @@ int main(int argc, char** argv)
 
   glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH|GLUT_ALPHA );
   if(draw_tex||draw_uv){
-    glutInitWindowSize (1800, 1800);
+    glutInitWindowSize (2400, 2400);
   }else{
-    glutInitWindowSize (600, 600);
+    glutInitWindowSize (1280 , 720);
   }
   //glutInitWindowPosition (100, 100);
   glutCreateWindow (argv[0]);
@@ -387,6 +416,7 @@ int main(int argc, char** argv)
 
   srand(123456);
   m=new Mesh (argv[1],nLabel);
+  m->init_select();
   // m->load_ptex("bull.ptx");
   if(tex_file[0]){
     m->load_tex(tex_file);
@@ -434,6 +464,20 @@ int main(int argc, char** argv)
 
   //draw_tex=true;
   if(run){
+
+    wS=1;
+    wI=1;
+    wV0=30;
+    wPt=1;
+
+    vW=1;
+    dataCostW=10000;
+    smoothW=15000;
+    saliency_weight=5;
+	  distw=1;
+    MC_ITER=1;
+    m->compute_plane();
+   // running=true;
     pthread_t thread;
     pthread_create(&thread, 0, iterate,(void*)m);
     pthread_detach(thread);
@@ -443,8 +487,9 @@ int main(int argc, char** argv)
   pthread_detach(hlthread);
 
   cam=new Cam();
-  rot=Quat(Vec3(0,0,1),0);
-  //rot=Quat(Vec3(-0.484781 ,0.701476 ,0.522417) ,10.6975*3.141592/180);
+  //rot=Quat(Vec3(0,0,1),0);
+  rot=Quat(Vec3(
+-0.682098 ,-0.501571 ,-0.532136),108.429*3.141592/180);
   ldown=0;
   glutMainLoop();
   return 0;

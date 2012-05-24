@@ -6,8 +6,9 @@
 #include <windows.h>
 #endif
 #include <GL/gl.h>
-#include <cstdlib>
 #include <GL/glu.h>
+
+#include <cstdlib>
 #include <utility>
 #include "mesh_query.h"
 #include <map>
@@ -132,7 +133,7 @@ void Mesh::get_normal_center()
     tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
     tt.A=tt.n.norm();
 	//if(tt.A<0.000001){
-	//	std::cout<<"bad trig\n";
+//		std::cout<<"bad trig\n";
 	//}
     if(tt.A>max_area){
       max_area=tt.A;
@@ -223,7 +224,6 @@ bool isOnEdge(const LabeledEdge & le, std::vector<std::vector<int > > & adjMat,
 void Mesh::fix_inner_cluster()
 {
   std::vector<bool>processed(t.size());
-  printf("0\n");
   //all clusters inside another single cluster is merged into the outer cluster
   for(size_t ii=0; ii<t.size(); ii++) {
     if(processed[ii]) {
@@ -258,7 +258,6 @@ void Mesh::fix_inner_cluster()
       }
     }
   }
-  printf("1\n");
 }
 
 void Mesh::compute_plane()
@@ -676,7 +675,8 @@ void Mesh::save_obj(const char * filename)
 }
 
 Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel),highlight(100),remap_tex(0),ptx(0),tex_buf(0)
+  :nLabel(_nLabel),highlight(1000),remap_tex(0),ptx(0),tex_buf(0),
+  fbo(0)
 {
   std::ifstream f ;
   f.open(filename);
@@ -810,7 +810,7 @@ void Mesh::drawPlane(int k)
 void Mesh::draw(std::vector<Vec3>&v)
 {
   glDisable(GL_LIGHTING);
-  //glDisable(GL_TEXTURE_2D);
+//  glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
   //GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
@@ -847,7 +847,7 @@ void Mesh::draw(std::vector<Vec3>&v)
     if(sal<0.2){
       sal=0.2;
     }
-
+    sal=1-sal;
     glColor3f(sal,sal,sal);
 
     GLfloat diffuse[4]= {sal,sal,sal,1.0f};
@@ -1063,9 +1063,9 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
   std::vector<int>count;
   plane.resize(nLabel);
   count.resize(m.t.size());
- // std::vector<real_t > dist(m.t.size(), 0.0f) ;
- // std::vector<real_t > cdf(m.t.size(),0.0f);
-  //real_t sum=0;
+  std::vector<real_t > dist(m.t.size(), 0.0f) ;
+  std::vector<real_t > cdf(m.t.size(),0.0f);
+  real_t sum=0;
   real_t totalA=0;
   for (unsigned int ii=0; ii<m.t.size(); ii++) {
     size_t ll = m.t[ii].label;
@@ -1076,9 +1076,9 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     plane[ll].c += m.t[ii].c;
     plane[ll].A+=m.t[ii].A;
     totalA+=m.t[ii].A;
-  //  dist[ii]=mcdistance(plane[ll],m.t[ii]);
-  //  sum+=dist[ii]*dist[ii];
-  //  cdf[ii]=sum;
+    dist[ii]=mcdistance(plane[ll],m.t[ii]);
+    sum+=dist[ii]*dist[ii];
+    cdf[ii]=sum;
     count[ll]++;
   }
 
@@ -1099,7 +1099,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
       m.t[r].label=ii;
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
-     // update_distance(dist, cdf, plane,m,ii);
+      update_distance(dist, cdf, plane,m,ii);
     }
   }
 }
@@ -1131,4 +1131,9 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
       plane[ii].n/=plane[ii].n.norm();
     }
   }
+}
+
+void Mesh::init_select()
+{
+  select_shader=glCreateShaderObjectARB(GL_FRAGMENT_SHADER);
 }

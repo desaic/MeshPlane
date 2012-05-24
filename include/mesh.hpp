@@ -2,8 +2,9 @@
 #define MESH_H
 #include <vector>
 #include <fstream>
+#include <GL/glew.h>
 #include "math.hpp"
-#include "Ptexture.h"
+
 #include <GL/gl.h>
 //by default counterclockwise winding is front face
 struct Trig{
@@ -89,19 +90,20 @@ public:
   void load_tex(const char * filename);
   void load_ptex(const char * filename);
   void draw_tex();
-
+  void init_select();
   Mesh * remap_tex;
-
   std::map<EdgeId, real_t > saliency;
   std::map<EdgeId, real_t > usr_weit;
 private:
   void compute_norm();
   void fix_inner_cluster();
-  PtexTexture *ptx;
   std::vector<Vec3>color;
   std::vector< std::vector<std::vector<int> > > lines;
   GLuint texture;
   unsigned char * tex_buf;
+
+  GLenum fbo;
+  GLhandleARB select_shader;
 };
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
 /**@param m assume triangle norms and centers are already computed
