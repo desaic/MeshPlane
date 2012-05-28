@@ -7,7 +7,7 @@
 #endif
 #include <GL/gl.h>
 #include <GL/glu.h>
-
+#include <stdio.h>
 #include <cstdlib>
 #include <utility>
 #include "mesh_query.h"
@@ -632,7 +632,41 @@ void Mesh::read_ply2(std::ifstream&f)
     nLabel=std::max(t[ii].label,nLabel);
   }
   nLabel++;
+}
 
+void int2b(unsigned int x, GLubyte * b)
+{
+  for(int ii=0;ii<4;ii++){
+    b[ii]=x&0xff;
+    x=x>>8;
+  }
+}
+
+unsigned int b2int(GLubyte * b)
+{
+  unsigned int x=0;
+  for(int ii=3;ii>=0;ii--){
+    x=x<<8;
+    x+=b[ii];
+  }
+  return x;
+}
+
+void Mesh::drawCol()
+{
+  glDisable(GL_LIGHTING);
+  glBegin(GL_TRIANGLES);
+  for(unsigned int ii=0; ii<t.size(); ii++) {
+    unsigned int l = t[ii].label;
+    GLubyte b[4];
+    int2b(l,b);
+    glColor4ub(b[0],b[1],b[2],b[3]);
+    glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
+    glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
+    glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
+
+  }
+  glEnd();
 }
 
 void Mesh::save_obj(const char * filename)
@@ -669,8 +703,8 @@ void Mesh::save_obj(const char * filename)
 }
 
 Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel),highlight(1000),remap_tex(0),tex_buf(0),
-  fbo(0)
+  :nLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),tex_buf(0)
+
 {
   std::ifstream f ;
   f.open(filename);
@@ -803,7 +837,7 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
-  glDisable(GL_LIGHTING);
+  //glDisable(GL_LIGHTING);
 //  glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
@@ -1127,7 +1161,72 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
   }
 }
 
-void Mesh::init_select()
+GLcharARB * read_entire_file(const char * filename, int * len )
 {
+  FILE * file = fopen(filename, "r");
+  if(!file){
+    printf("cannot open shader %s\n", filename);
+    return 0;
+  }
+  GLcharARB * buf=0;
+  fseek(file, 0, SEEK_END);
+	size_t length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	buf = new GLcharARB[length+1];
+  length = fread( buf, 1, length, file);
+  buf[length]=0;
+  *len=length;
+  return buf;
+}
+
+void Mesh::init_select(const char * shaderfile)
+{
+  glewInit();
+  /*if(!glCreateShaderObjectARB){
+    select_shader=0;
+    return;
+  }
   select_shader=glCreateShaderObjectARB(GL_FRAGMENT_SHADER);
+  int len =0;
+  GLcharARB * buf = read_entire_file(shaderfile, &len);
+  glShaderSourceARB(select_shader, 1,  (const GLcharARB**) (&buf), 0);
+  glCompileShaderARB(select_shader);
+
+  int  ret_code = 0;
+  glGetObjectParameterivARB(select_shader, GL_OBJECT_COMPILE_STATUS_ARB, &ret_code);
+    if (ret_code == 0)
+    {
+      char error_string[512];
+      glGetInfoLogARB(select_shader, sizeof(error_string), 0, error_string);
+      printf("%s\n",error_string);
+      select_shader=0;
+    }
+
+  delete [] buf;
+  */
+  int tex_wid=1280, tex_hig=720;
+
+  glGenTextures(1, &fbot);
+  glBindTexture(GL_TEXTURE_2D, fbot);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_wid, tex_hig, 0,
+             GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  GLuint rboId;
+  glGenRenderbuffers(1, &rboId);
+  glBindRenderbuffer(GL_RENDERBUFFER, rboId);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+                      tex_wid, tex_hig);
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+  glGenFramebuffers(1, &fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                       GL_TEXTURE_2D, fbot, 0);
+  // attach the renderbuffer to depth attachment point
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                          GL_RENDERBUFFER, rboId);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

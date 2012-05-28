@@ -144,7 +144,10 @@ void display(void)
   glRotatef(angle,axis[0],axis[1],axis[2]);
   m->draw(m->v);
 
-
+  glBindFramebuffer(GL_FRAMEBUFFER, m->fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  m->drawCol();
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glPopMatrix();
 
   //glPushMatrix();
@@ -263,6 +266,13 @@ void mouse(int button, int state, int x, int y)
       break;
     case GLUT_UP:
       ldown=0;
+      glBindFramebuffer(GL_FRAMEBUFFER,m->fbo);
+      glFlush();
+      unsigned char buf[4];
+      glReadPixels(x, 720-y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+      unsigned int l = b2int((GLubyte*)buf);
+      std::cout<<l<<"\n";
+      glBindFramebuffer(GL_FRAMEBUFFER,0);
       break;
     }
     break;
@@ -416,7 +426,7 @@ int main(int argc, char** argv)
 
   srand(123456);
   m=new Mesh (argv[1],nLabel);
-  m->init_select();
+  m->init_select("shader/select.glsl");
   // m->load_ptex("bull.ptx");
   if(tex_file[0]){
     m->load_tex(tex_file);

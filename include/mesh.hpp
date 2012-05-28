@@ -73,6 +73,7 @@ public:
   Mesh(const char * filename,int _nLabel=50);
   void adjlist();
   void draw(std::vector<Vec3>&v);
+  void drawCol();
   void drawLines();
   void drawPlane(int k);
   void assign_color();
@@ -90,10 +91,11 @@ public:
   void load_tex(const char * filename);
   void load_ptex(const char * filename);
   void draw_tex();
-  void init_select();
+  void init_select(const char * shaderfile);
   Mesh * remap_tex;
   std::map<EdgeId, real_t > saliency;
   std::map<EdgeId, real_t > usr_weit;
+  GLuint fbo;
 private:
   void compute_norm();
   void fix_inner_cluster();
@@ -102,7 +104,7 @@ private:
   GLuint texture;
   unsigned char * tex_buf;
 
-  GLenum fbo;
+  GLuint fbot;
   GLhandleARB select_shader;
 };
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
@@ -110,5 +112,5 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
  */
 void get_plane(Mesh & m , std::vector<Plane> & plane);
 real_t mcdistance( Plane & p, Trig &t);
-
+unsigned int b2int(GLubyte * b);
 #endif
