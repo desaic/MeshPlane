@@ -17,7 +17,7 @@ void update_distance(std::vector<real_t > & dist,
     real_t d = tpdistance(m.t[ii], plane[ll]);
     if(d<dist[ii] ){
       dist[ii]=d;
-   //   m.t[ii].label=ll;
+      m.t[ii].label=ll;
     }
     sum+=dist[ii]*dist[ii];
     cdf[ii]=sum;
@@ -59,7 +59,67 @@ class CmpDist
   }
 };
 
-void runKmeans(Mesh & m)
+void findCentroids(Mesh & m, std::vector<Plane> & plane, std::vector<int> &centroid)
+{
+  m.get_normal_center();
+  get_plane(m,plane);
+  std::vector<real_t> minDist ;
+  centroid.resize(plane.size());
+  centroid.assign(centroid.size(),-1);
+  minDist.resize(centroid.size());
+  for(size_t ii=0;ii<m.t.size();ii++){
+    int ll = m.t[ii].label;
+    real_t dist = tpdistance(m.t[ii],plane[ll]);
+    if(centroid[ll]<0
+       ||dist < minDist[ll]){
+      centroid[ll]=ii;
+      minDist[ll]=dist;
+      continue;
+    }
+  }
+}
+
+void flood(Mesh & m, const std::vector<int> & centroids,
+           std::vector<Plane > & plane)
+{
+  CmpDist cmpdist;
+  std::priority_queue< TrigDist, std::vector<TrigDist>, CmpDist> pq;
+  std::vector<bool> labeled(m.t.size());
+  for(size_t ii=0;ii<centroids.size();ii++){
+    int cidx=centroids[ii];
+    if(cidx<0){
+      std::cout<<"wtf\n";
+    }
+    real_t dist = tpdistance(m.t[cidx], plane[ii]);
+    pq.push(TrigDist(cidx, m.t[cidx].label, dist) );
+  }
+  std::map<TrigDist , bool> processed;
+  while(!pq.empty()){
+    TrigDist trigdist= pq.top();
+    pq.pop();
+    int tidx=trigdist.idx;
+    int label=trigdist.label;
+    if(!labeled[tidx]){
+      m.t[tidx].label=label;
+      labeled[tidx]=true;
+    }else{
+      continue;
+    }
+
+    for(size_t ii=0;ii<m.adjMat[tidx].size();ii++){
+      int nbrIdx=m.adjMat[tidx][ii];
+      real_t nbrDist=tpdistance(m.t[nbrIdx],plane[label]);
+      TrigDist nbrTd(nbrIdx,label,nbrDist );
+      if(processed[nbrTd]){
+        continue;
+      }
+      processed[nbrTd]=true;
+      pq.push(nbrTd);
+    }
+  }
+}
+
+void initKmeans(Mesh & m)
 {
   std::vector<Plane> plane;
   std::vector<int> centroids;
@@ -91,38 +151,13 @@ void runKmeans(Mesh & m)
     //std::cout<<kk<<"\n";
     update_distance(dist, cdf ,plane,m,kk);
   }
-  CmpDist cmpdist;
-  std::priority_queue< TrigDist, std::vector<TrigDist>, CmpDist> pq;
-  std::vector<bool> labeled(m.t.size());
-  for(size_t ii=0;ii<centroids.size();ii++){
-    int cidx=centroids[ii];
-    if(cidx<0){
-      std::cout<<"wtf\n";
-    }
-    pq.push(TrigDist(cidx, m.t[cidx].label, dist[cidx]) );
-  }
-  std::map<TrigDist , bool> processed;
-  while(!pq.empty()){
-    TrigDist trigdist= pq.top();
-    pq.pop();
-    int tidx=trigdist.idx;
-    int label=trigdist.label;
-    if(!labeled[tidx]){
-      m.t[tidx].label=label;
-      labeled[tidx]=true;
-    }else{
-      continue;
-    }
+  flood(m,centroids, plane);
+}
 
-    for(size_t ii=0;ii<m.adjMat[tidx].size();ii++){
-      int nbrIdx=m.adjMat[tidx][ii];
-      real_t nbrDist=tpdistance(m.t[nbrIdx],plane[label]);
-      TrigDist nbrTd(nbrIdx,label,nbrDist );
-      if(processed[nbrTd]){
-        continue;
-      }
-      processed[nbrTd]=true;
-      pq.push(nbrTd);
-    }
-  }
+void runKmeans(Mesh & m)
+{
+  std::vector<Plane> plane;
+  std::vector<int>centroid;
+  findCentroids(m,plane,centroid);
+  flood(m,centroid,plane);
 }

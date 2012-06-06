@@ -837,7 +837,7 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
-  //glDisable(GL_LIGHTING);
+  glDisable(GL_LIGHTING);
 //  glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
@@ -854,17 +854,7 @@ void Mesh::draw(std::vector<Vec3>&v)
 
   for(unsigned int ii=0; ii<t.size(); ii++) {
    unsigned int  l = t[ii].label;
-   /*
-        if(ptx && (int)ii< ptx->numFaces()){
-          float ptxColor[4];
-          ptx->getPixel(ii,0,0,ptxColor,0,4);
-          glColor3f(ptxColor[0],ptxColor[1],ptxColor[2]);
-          GLfloat diffuse[4]= {ptxColor[0],ptxColor[1],ptxColor[2],1.0f};
-          glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
-        }
-        else{
-*/
-    real_t sal=1;
+  /*  real_t sal=1;
     for(size_t jj=0;jj<adjMat[ii].size();jj++){
       EdgeId eid(ii,adjMat[ii][jj]);
       if(usr_weit.find(eid)!=usr_weit.end()){
@@ -880,6 +870,7 @@ void Mesh::draw(std::vector<Vec3>&v)
 
     GLfloat diffuse[4]= {sal,sal,sal,1.0f};
     glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
+*/
     Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);

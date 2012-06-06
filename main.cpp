@@ -322,12 +322,12 @@ void* iterate(void* arg){
 	distw=1;
 
  // BP bp(*m);
-
+  initKmeans(*m);
   for(int ii=0;ii<ITER;ii++){
     wPt+=3;
     printf("iter %d\n",ii);
-    runMincut(*m);
- //   runKmeans(*m);
+ //   runMincut(*m);
+    runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);
