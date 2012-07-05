@@ -17,7 +17,7 @@ void update_distance(std::vector<real_t > & dist,
     real_t d = tpdistance(m.t[ii], plane[ll]);
     if(d<dist[ii] ){
       dist[ii]=d;
-      m.t[ii].label=ll;
+ //     m.t[ii].label=ll;
     }
     sum+=dist[ii]*dist[ii];
     cdf[ii]=sum;

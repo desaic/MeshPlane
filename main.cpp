@@ -96,9 +96,9 @@ void display(void)
 
   if(running){
 
-    wPt+=3;
+    wPt+=1;
     if(imgnum>230){
-      wPt+=1000;
+      wPt+=200;
     }
     if(imgnum%10==0){
       runMincut(*m);
@@ -138,8 +138,6 @@ void display(void)
   //glTranslatef(-1,0,0);
   rot.to_angle_axis(axis,&angle);
   angle=angle*180/3.14159;
- // std::cout<<angle<<"\n";
-  //std::cout<<axis[0]<<" "<<axis[1]<<" "<<axis[2]<<"\n";
 
   glRotatef(angle,axis[0],axis[1],axis[2]);
   m->draw(m->v);
@@ -222,29 +220,14 @@ void keyboard(unsigned char key,int x, int y)
     cam->eye[0]+=0.1;
     break;
 
-  case 'x':
-    cam->rotx+=0.1;
-    if(cam->rotx>6.28){
-      cam->rotx-=6.28;
-    }
-    break;
+
   case 'z':
-    cam->rotx-=0.1;
-    if(cam->rotx<-6.28){
-      cam->rotx+=6.28;
-    }
-    break;
-  case 'c':
-    cam->roty+=0.1;
-    if(cam->roty>6.28){
-      cam->roty-=6.28;
-    }
-    break;
-  case 'v':
-    cam->roty-=0.1;
-    if(cam->roty<-6.28){
-      cam->roty+=6.28;
-    }
+    Vec3 axis ;
+    real_t angle;
+    rot.to_angle_axis(axis,&angle);
+    angle=angle*180/3.14159;
+    std::cout<<axis[0]<<" "<<axis[1]<<" "<<axis[2]<<"\n";
+    std::cout<<angle<<"\n";
     break;
 
   }
@@ -308,17 +291,17 @@ void animate(int t)
 
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=50;
+  int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
   wS=1;
   wI=1;
-  wV0=30;
+  wV0=50;
   wPt=0.5;
   vW=1;
   dataCostW=10000;
-  smoothW=2500;
-  saliency_weight=2;
+  smoothW=3000;
+  saliency_weight=5;
 	distw=1;
 
  // BP bp(*m);
@@ -326,8 +309,8 @@ void* iterate(void* arg){
   for(int ii=0;ii<ITER;ii++){
     wPt+=3;
     printf("iter %d\n",ii);
- //   runMincut(*m);
-    runKmeans(*m);
+    runMincut(*m);
+    //runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);
@@ -477,32 +460,27 @@ int main(int argc, char** argv)
 
     wS=1;
     wI=1;
-    wV0=30;
+    wV0=20;
     wPt=1;
-
     vW=1;
     dataCostW=10000;
-    smoothW=15000;
-    saliency_weight=5;
+    smoothW=2500;
+    saliency_weight=2;
 	  distw=1;
     MC_ITER=1;
     m->compute_plane();
-   // running=true;
-    pthread_t thread;
-    pthread_create(&thread, 0, iterate,(void*)m);
-    pthread_detach(thread);
+    running=true;
+  //  pthread_t thread;
+  //  pthread_create(&thread, 0, iterate,(void*)m);
+  //  pthread_detach(thread);
   }
   pthread_t hlthread;
   pthread_create(&hlthread,0,scanHighlight,(void*)m);
   pthread_detach(hlthread);
-
   cam=new Cam();
-  //rot=Quat(Vec3(0,0,1),0);
-  rot=Quat(Vec3(
--0.682098 ,-0.501571 ,-0.532136),108.429*3.141592/180);
+  rot=Quat(Vec3(0.223548 ,-0.967469 ,-0.118444),52.0984*3.141592/180);
   ldown=0;
   glutMainLoop();
   return 0;
 //p=new Poly(m);
-
 }

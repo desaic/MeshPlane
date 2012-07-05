@@ -837,17 +837,17 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3>&v)
 {
-  glDisable(GL_LIGHTING);
+  //glDisable(GL_LIGHTING);
 //  glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
-  //GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
-  //GLfloat ambient[4]= {0.1f,0.1f,0.1f,1.0f};
+  GLfloat specular[4]= {0.51f,0.51f,0.51f,1.0f};
+  GLfloat ambient[4]= {0.1f,0.1f,0.1f,1.0f};
 
-//  glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
-//  glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
-//  GLfloat s=10;
-//  glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
+  glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
+  glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
+  GLfloat s=10;
+  glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
   if(tex_buf) {
     glBindTexture(GL_TEXTURE_2D,texture);
   }
@@ -873,7 +873,7 @@ void Mesh::draw(std::vector<Vec3>&v)
 */
     Vec3 a = v[t[ii][1]] - v[t[ii][0]];
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
-    b=a.cross(b);
+    b=-a.cross(b);
     b= b/b.norm();
     if(tex_buf && tex.size()>0) {
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
@@ -893,11 +893,12 @@ void Mesh::draw(std::vector<Vec3>&v)
         glColor3f(color[l][0],color[l][1],color[l][2]);
         glMaterialfv(GL_FRONT,GL_DIFFUSE,clr);
       }
-      glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
+      glNormal3f(b[0],b[1],b[2]);
+      //glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glVertex3f(v[t[ii][0]][0],v[t[ii][0]][1],v[t[ii][0]][2]);
-      glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
+     // glNormal3f(n[t[ii][1]][0],n[t[ii][1]][1],n[t[ii][1]][2]);
       glVertex3f(v[t[ii][1]][0],v[t[ii][1]][1],v[t[ii][1]][2]);
-      glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
+     // glNormal3f(n[t[ii][2]][0],n[t[ii][2]][1],n[t[ii][2]][2]);
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
 
     }
