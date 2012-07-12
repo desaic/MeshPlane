@@ -206,6 +206,9 @@ void mul(GLdouble * a,GLdouble c)
 }
 void keyboard(unsigned char key,int x, int y)
 {
+
+  Vec3 axis ;
+  real_t angle;
   switch(key){
   case 'w':
     cam->eye[2]-=0.1;
@@ -219,17 +222,15 @@ void keyboard(unsigned char key,int x, int y)
   case 'd':
     cam->eye[0]+=0.1;
     break;
-
-
   case 'z':
-    Vec3 axis ;
-    real_t angle;
     rot.to_angle_axis(axis,&angle);
     angle=angle*180/3.14159;
     std::cout<<axis[0]<<" "<<axis[1]<<" "<<axis[2]<<"\n";
     std::cout<<angle<<"\n";
     break;
-
+  case 'x':
+    imageio_save_screenshot("screenshot.png");
+    break;
   }
   glutPostRedisplay();
 }
