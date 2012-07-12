@@ -465,8 +465,8 @@ int main(int argc, char** argv)
     vW=1;
     dataCostW=10000;
     smoothW=2500;
-    saliency_weight=2;
-	  distw=1;
+    saliency_weight=10;
+  distw=1;
     MC_ITER=1;
     m->compute_plane();
     running=true;
@@ -478,7 +478,7 @@ int main(int argc, char** argv)
   pthread_create(&hlthread,0,scanHighlight,(void*)m);
   pthread_detach(hlthread);
   cam=new Cam();
-  rot=Quat(Vec3(0.223548 ,-0.967469 ,-0.118444),52.0984*3.141592/180);
+  rot=Quat(Vec3(0.211347, 0.94378, -0.254189),11.1752*3.141592/180);
   ldown=0;
   glutMainLoop();
   return 0;
