@@ -154,6 +154,7 @@ for(size_t tIdx=0; tIdx<m.t.size(); tIdx++) {
   }
   }
 }
+
 /**@brief
   @param b will be filled with 1 0 0 0 1 0 0 0 1
 */
@@ -306,7 +307,7 @@ void array2vertex(const double * x, Mesh &m)
     }
   }
 
-  /*m.self_intersect();
+  m.self_intersect();
   std::map<int,bool>::iterator it;
   for(it = m.bad.begin();it!=m.bad.end();it++){
     for(int ii=0;ii<3;ii++){
@@ -314,7 +315,7 @@ void array2vertex(const double * x, Mesh &m)
       m.v[vidx]=v0[vidx];
     }
   }
-*/
+
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)
@@ -365,6 +366,20 @@ void vert_smooth_mat(Mesh & m,
     addrow(val,ccs,axis*nvar);
     bb.push_back(0);
   }
+  }
+}
+
+void subtract(double * a, double *b , int size)
+{
+  for(int ii=0;ii<size;ii++){
+    a[ii]-=b[ii];
+  }
+}
+
+void scale(double * a, real_t scale , int size)
+{
+  for(int ii=0;ii<size;ii++){
+    a[ii] *= scale;
   }
 }
 
@@ -421,11 +436,25 @@ void cgd(Mesh & m)
 
   double eps = 1E-9;
   int maxIter = 20;
+
   int verbose = 0;
-  int ret = solver.SolveLinearSystemWithJacobiPreconditioner(x, ATb, eps, maxIter, verbose);//
+   int ret = solver.SolveLinearSystemWithJacobiPreconditioner(x, ATb, eps, maxIter, verbose);//
   if(ret<0) {
     printf("optimization error\n");
+   }
+  /* gradient descent
+  double * g = new double[width];
+  double * Ag=new double[width];
+  for(int iter=0;iter<maxIter;iter++){
+    A.MultiplyVector(x, g);
+    subtract(g, ATb,width);
+    real_t alpha = solver.DotProduct(g,g);
+    A.MultiplyVector(g,Ag);
+    alpha /= solver.DotProduct(g,Ag);
+    scale(g,alpha,width);
+    subtract(x, g, width);
   }
+  */
   A.CheckLinearSystemSolution(x,ATb);
   printf("\n");
   array2vertex(x,m);

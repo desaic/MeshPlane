@@ -70,7 +70,7 @@ public:
   std::vector<Vec3>v4;
   std::vector<std::vector<int> >  adjMat;
   Mesh():v(0),t(0),remap_tex(0){}
-  Mesh(const char * filename,int _nLabel=50);
+  Mesh(const char * filename,int _nLabel=50, bool _auto=true);
   void adjlist();
   void draw(std::vector<Vec3>&v);
   void drawCol();
@@ -106,6 +106,8 @@ private:
 
   GLuint fbot;
   GLhandleARB select_shader;
+
+  bool autoscale;
 };
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
 /**@param m assume triangle norms and centers are already computed

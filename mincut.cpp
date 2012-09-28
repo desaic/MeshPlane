@@ -73,7 +73,7 @@ void smooth_cost(Mesh& m,
       }
       EdgeId eid(ii,nbrIdx);
       float cost = ( m.t[ii].n - m.t[nbrIdx].n).L1n();//(area1+area2)*
-      cost = 1/(1+cost);
+      cost = 4-cost;//1/(1+cost);
 
       if(m.saliency.find(eid) != m.saliency.end()){
        real_t salw=(m.saliency[eid]);

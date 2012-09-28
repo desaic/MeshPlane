@@ -2,13 +2,7 @@
 #include <windows.h>
 #endif
 #include "mesh.hpp"
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/freeglut.h>
-#include <cmath>
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 #include "poly.hpp"
 #include "mincut.hpp"
 #include "kmeans.hpp"
@@ -20,6 +14,17 @@
 #include "saliency.hpp"
 #include"quat.h"
 #include "cgd.hpp"
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/freeglut.h>
+#include <cmath>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <string>
+#include <sstream>
 static Mesh * m;
 
 static Quat rot;
@@ -101,7 +106,7 @@ void display(void)
       wPt+=200;
     }
     if(imgnum%10==0){
-      runMincut(*m);
+    //  runMincut(*m);
       //runKmeans(*m);
     }
     m->compute_plane();
@@ -177,7 +182,7 @@ void reshape (int w, int h)
   if(draw_tex||draw_uv){
     glOrtho(-0.5,0.5,-0.5,0.5,10,0.1);
   }else{
-    gluPerspective(40.0, (GLfloat) w/(GLfloat) h, 1.0, 20.0);
+    gluPerspective(40.0, (GLfloat) w/(GLfloat) h, 0.1, 20.0);
   }
 }
 
@@ -230,6 +235,9 @@ void keyboard(unsigned char key,int x, int y)
     break;
   case 'x':
     imageio_save_screenshot("screenshot.png");
+    break;
+  case 'o':
+    m->save_obj("mesh.obj");
     break;
   }
   glutPostRedisplay();
@@ -295,15 +303,15 @@ void* iterate(void* arg){
   int ITER=100;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
-  wS=1;
+  wS=0.1;
   wI=1;
   wV0=50;
   wPt=0.5;
   vW=1;
   dataCostW=10000;
-  smoothW=3000;
+//  smoothW=400;
   saliency_weight=5;
-	distw=1;
+	distw=20;
 
  // BP bp(*m);
   initKmeans(*m);
@@ -324,9 +332,6 @@ void* iterate(void* arg){
   m->save_plane("plane.txt");
   return 0;
 }
-#include <iostream>
-#include <string>
-#include <sstream>
 void *scanHighlight(void * arg)
 {
   Mesh * m = (Mesh*)arg;
@@ -353,6 +358,7 @@ int main(int argc, char** argv)
   const char * uvfile="";
   const char * salfile="";
   const char * usrfile="";
+  bool autoscale = true;
   for(int ii=0;ii<argc;ii++){
     if(strcmp(argv[ii], "-k")==0){
       ii++;
@@ -386,6 +392,13 @@ int main(int argc, char** argv)
       ii++;
       salfile=argv[ii];
     }
+    if(strcmp(argv[ii],"-noscale")==0){
+      autoscale=false;
+    }
+    if(strcmp(argv[ii], "-smoothcost")==0){
+      ii++;
+      smoothW=atoi(argv[ii]);
+    }
     if(strcmp(argv[ii],"-usr")==0){
       ii++;
       usrfile=argv[ii];
@@ -396,7 +409,7 @@ int main(int argc, char** argv)
   if(draw_tex||draw_uv){
     glutInitWindowSize (2400, 2400);
   }else{
-    glutInitWindowSize (1280 , 720);
+    glutInitWindowSize (800 , 600);
   }
   //glutInitWindowPosition (100, 100);
   glutCreateWindow (argv[0]);
@@ -409,7 +422,7 @@ int main(int argc, char** argv)
   glutTimerFunc(0.1, animate, 0);
 
   srand(123456);
-  m=new Mesh (argv[1],nLabel);
+  m=new Mesh (argv[1],nLabel, autoscale);
   m->init_select("shader/select.glsl");
   // m->load_ptex("bull.ptx");
   if(tex_file[0]){
@@ -465,21 +478,22 @@ int main(int argc, char** argv)
     wPt=1;
     vW=1;
     dataCostW=10000;
-    smoothW=2500;
+    //smoothW=2500;
     saliency_weight=10;
   distw=1;
     MC_ITER=1;
     m->compute_plane();
-    running=true;
-  //  pthread_t thread;
-  //  pthread_create(&thread, 0, iterate,(void*)m);
-  //  pthread_detach(thread);
+  //  running=true;
+    pthread_t thread;
+    pthread_create(&thread, 0, iterate,(void*)m);
+    pthread_detach(thread);
   }
   pthread_t hlthread;
   pthread_create(&hlthread,0,scanHighlight,(void*)m);
   pthread_detach(hlthread);
   cam=new Cam();
-  rot=Quat(Vec3(0.211347, 0.94378, -0.254189),11.1752*3.141592/180);
+  rot=Quat(Vec3(1,0,0),0);
+  //rot=Quat(Vec3(0.211347, 0.94378, -0.254189),11.1752*3.141592/180);
   ldown=0;
   glutMainLoop();
   return 0;

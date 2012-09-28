@@ -702,8 +702,8 @@ void Mesh::save_obj(const char * filename)
   out.close();
 }
 
-Mesh::Mesh(const char * filename, int _nLabel)
-  :nLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),tex_buf(0)
+Mesh::Mesh(const char * filename, int _nLabel , bool _auto)
+  :nLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),tex_buf(0),autoscale(_auto)
 
 {
   std::ifstream f ;
@@ -728,6 +728,7 @@ Mesh::Mesh(const char * filename, int _nLabel)
   real_t mx[3]= {-1,-1,-1};
 
   //scale and translate to [0 , 1]
+  if(autoscale){
   for (unsigned int dim = 0; dim<3; dim++) {
     for( size_t ii=0; ii<v.size(); ii++) {
       mn [dim]= std::min(v[ii][dim],mn[dim]);
@@ -749,6 +750,7 @@ Mesh::Mesh(const char * filename, int _nLabel)
     for (unsigned int dim = 0; dim<3; dim++) {
       v[ii][dim]=v[ii][dim]*scale;
     }
+  }
   }
   v0=v;
   compute_norm();
@@ -847,7 +849,7 @@ void Mesh::draw(std::vector<Vec3>&v)
   glMaterialfv(GL_FRONT,GL_SPECULAR,specular);
   glMaterialfv(GL_FRONT,GL_AMBIENT,ambient);
   GLfloat s=10;
-  glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS,&s);
+  glMaterialfv(GL_FRONT,GL_SHININESS,&s);
   if(tex_buf) {
     glBindTexture(GL_TEXTURE_2D,texture);
   }
