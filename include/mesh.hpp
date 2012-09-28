@@ -96,6 +96,7 @@ public:
   std::map<EdgeId, real_t > saliency;
   std::map<EdgeId, real_t > usr_weit;
   GLuint fbo;
+  bool checkIntersect;
 private:
   void compute_norm();
   void fix_inner_cluster();

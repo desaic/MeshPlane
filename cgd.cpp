@@ -307,6 +307,7 @@ void array2vertex(const double * x, Mesh &m)
     }
   }
 
+  if(m.checkIntersect){
   m.self_intersect();
   std::map<int,bool>::iterator it;
   for(it = m.bad.begin();it!=m.bad.end();it++){
@@ -315,7 +316,7 @@ void array2vertex(const double * x, Mesh &m)
       m.v[vidx]=v0[vidx];
     }
   }
-
+}
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)

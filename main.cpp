@@ -359,6 +359,7 @@ int main(int argc, char** argv)
   const char * salfile="";
   const char * usrfile="";
   bool autoscale = true;
+  bool checkIntersect=false;
   for(int ii=0;ii<argc;ii++){
     if(strcmp(argv[ii], "-k")==0){
       ii++;
@@ -395,6 +396,9 @@ int main(int argc, char** argv)
     if(strcmp(argv[ii],"-noscale")==0){
       autoscale=false;
     }
+    if(strcmp(argv[ii],"-inter")==0){
+      checkIntersect=true;
+    }
     if(strcmp(argv[ii], "-smoothcost")==0){
       ii++;
       smoothW=atoi(argv[ii]);
@@ -423,6 +427,7 @@ int main(int argc, char** argv)
 
   srand(123456);
   m=new Mesh (argv[1],nLabel, autoscale);
+  m->checkIntersect = checkIntersect;
   m->init_select("shader/select.glsl");
   // m->load_ptex("bull.ptx");
   if(tex_file[0]){

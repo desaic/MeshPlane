@@ -703,7 +703,8 @@ void Mesh::save_obj(const char * filename)
 }
 
 Mesh::Mesh(const char * filename, int _nLabel , bool _auto)
-  :nLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),tex_buf(0),autoscale(_auto)
+  :nLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),checkIntersect(0),
+  tex_buf(0),autoscale(_auto)
 
 {
   std::ifstream f ;
