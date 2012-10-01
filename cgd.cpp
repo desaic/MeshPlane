@@ -3,7 +3,7 @@
 #include "sparseccs.h"
 #include "sparseMatrix.h"
 #include "CGSolver.h"
-
+#include <iostream>
 #include <fstream>
 #include <set>
 float wS=10;
@@ -307,16 +307,20 @@ void array2vertex(const double * x, Mesh &m)
     }
   }
 
+  int iter=0;
   if(m.checkIntersect){
-  m.self_intersect();
-  std::map<int,bool>::iterator it;
-  for(it = m.bad.begin();it!=m.bad.end();it++){
+  while(m.self_intersect()){
+    std::map<int,bool>::iterator it;
+    for(it = m.bad.begin();it!=m.bad.end();it++){
     for(int ii=0;ii<3;ii++){
       int vidx=m.t[it->first][ii];
       m.v[vidx]=v0[vidx];
     }
+    }
+    std::cout<<iter<<" intersection\n";
+    iter++;
   }
-}
+  }
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)

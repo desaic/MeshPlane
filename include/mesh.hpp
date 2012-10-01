@@ -79,6 +79,7 @@ public:
   void assign_color();
   void save(const char * filename);
   void save_plane(const char * filename);
+  void save_off(const char * filename);
   bool has_v4;
   void get_normal_center();
   std::vector<Plane>planes;

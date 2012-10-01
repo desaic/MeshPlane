@@ -239,6 +239,9 @@ void keyboard(unsigned char key,int x, int y)
   case 'o':
     m->save_obj("mesh.obj");
     break;
+  case 'f':
+    m->save_off("off.off");
+    break;
   }
   glutPostRedisplay();
 }
@@ -311,7 +314,7 @@ void* iterate(void* arg){
   dataCostW=10000;
 //  smoothW=400;
   saliency_weight=5;
-	distw=20;
+	distw=5;
 
  // BP bp(*m);
   initKmeans(*m);
@@ -325,8 +328,11 @@ void* iterate(void* arg){
     cgd(*m);
 //    weighted_avg(*m);
   }
+  wPt=1000;
+  cgd(*m);
   wPt=2000;
   cgd(*m);
+  
   m->save("planar_output.ply2");
   m->compute_plane();
   m->save_plane("plane.txt");

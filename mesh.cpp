@@ -100,6 +100,7 @@ bool Mesh::self_intersect()
   int triangle_index;
   bool ret = false;
   double ss, tt, aa, bb, cc;
+  bad.clear();
   for(size_t ii=0; ii<t.size(); ii++) {
     for(int jj=0; jj<3; jj++) {
       int a = t[ii][jj];
@@ -476,6 +477,42 @@ void Mesh::save_plane(const char * filename)
     }
     out<<"\n";
   }
+  out.close();
+}
+
+void Mesh::save_off(const char * filename)
+{
+  std::ofstream out;
+  out.open(filename);
+  out<<"OFF\n";
+  out<<v.size()<<" ";
+  int npoly=0;
+  for(size_t ii=0; ii<lines.size(); ii++) {
+    for(size_t jj=0; jj<lines[ii].size(); jj++) {
+      if(lines[ii][jj].size()>2){
+        npoly++;
+      }  
+    }
+  }
+  out<<npoly<<" 0\n\n";
+
+  for(size_t ii=0;ii<v.size();ii++){
+    out<< std::fixed <<v[ii][0]<<" "<<v[ii][1]<<" "<<v[ii][2]<<"\n";
+  }
+
+  for(size_t ii=0; ii<lines.size(); ii++) {
+    for(size_t jj=0; jj<lines[ii].size(); jj++) {
+      out<<lines[ii][jj].size()<<" ";
+      if(lines[ii][jj].size()<3){
+        continue;
+      }
+      for(size_t kk=0; kk<lines[ii][jj].size(); kk++) {
+        out<<" "<<lines[ii][jj][kk];
+      }
+      out<<"\n";
+    }
+  }
+  out<<"\n";
   out.close();
 }
 
