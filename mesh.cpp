@@ -1,4 +1,6 @@
 #include "mesh.hpp"
+#include "voxel.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -134,7 +136,7 @@ void Mesh::get_normal_center()
     tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
     tt.A=tt.n.norm();
 	//if(tt.A<0.000001){
-//		std::cout<<"bad trig\n";
+//std::cout<<"bad trig\n";
 	//}
     if(tt.A>max_area){
       max_area=tt.A;
@@ -816,6 +818,10 @@ void Mesh::compute_norm()
     Vec3 b = v[t[ii][2]] - v[t[ii][0]];
     b=a.cross(b);
     for(int jj=0; jj<3; jj++) {
+      if(t[ii][jj]>=(int)n.size()){
+        std::cout<<"Input obj file buggy. Vertex index larger than number of vertices\n";
+        std::cout<<"triangle: "<<ii<<"\n";
+      }
       n[t[ii][jj]]+=b;
     }
   }
@@ -929,7 +935,8 @@ void Mesh::draw(std::vector<Vec3>&v)
       glVertex3f(v[t[ii][2]][0],v[t[ii][2]][1],v[t[ii][2]][2]);
     } else {
       if(l<color.size()){
-        GLfloat clr[4]= {color[l][0],color[l][1],color[l][2],1.0f};
+        GLfloat clr[4]= {(float)color[l][0],(float)color[l][1],
+                         (float)color[l][2],1.0f};
         glColor3f(color[l][0],color[l][1],color[l][2]);
         glMaterialfv(GL_FRONT,GL_DIFFUSE,clr);
       }

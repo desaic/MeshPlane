@@ -80,7 +80,8 @@ struct Vec3{
     return *this;
   }
 
-  real_t & operator[](const int i) {return x[i];}
+  real_t & operator[](int i) {return x[i];}
+  real_t operator [] (int i)const {return x[i];}
   real_t x[3];
 };
 
