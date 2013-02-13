@@ -9,13 +9,17 @@ float dataCostW=100;
 float smoothW=10;
 float distw = 10;
 real_t saliency_weight=1;
+float L1n(Vec3f v)
+{
+  return std::abs(v[0]+v[1]+v[2]);
+}
 real_t mcdistance( Plane & p, Trig &t)
 {
 
-  Vec3 plane_d = p.n.dot(p.c);
-      Vec3 d = t.c.dot(p.n);
-      real_t  cost = distw * (plane_d-d).L1n();
-      cost += (t.n- p.n).L1n();
+  float plane_d = dot(p.n,p.c);
+  float d = dot(t.c,p.n);
+  real_t  cost = distw * (plane_d-d);
+  cost += L1n(t.n- p.n);
       cost /= (1+distw);
       cost*=t.A;
   return cost;
@@ -53,7 +57,7 @@ void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
 
 float mcdistance( Trig & a, Trig &b)
 {
-  float d = (a.n-b.n).L1n();
+  float d = L1n(a.n-b.n);
   return d;
 }
 /**@param smoothc smoothc[i][j] is the smoothness cost for
@@ -72,7 +76,7 @@ void smooth_cost(Mesh& m,
 	      continue;
       }
       EdgeId eid(ii,nbrIdx);
-      float cost = ( m.t[ii].n - m.t[nbrIdx].n).L1n();//(area1+area2)*
+      float cost = L1n( m.t[ii].n - m.t[nbrIdx].n);//(area1+area2)*
       cost = 4-cost;//1/(1+cost);
 
       if(m.saliency.find(eid) != m.saliency.end()){

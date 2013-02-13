@@ -44,7 +44,7 @@ void line(int x0,int  y0, int x1, int y1, Mapper & mapper );
 
 void trace_edge(Mesh & m, int tidx, int kk0,int kk1, Mapper & mapper)
 {
-  Vec3 v0,v1;
+  Vec3f v0,v1;
   v0=m.tex[ m.t[tidx].texId[kk0] ];
   v1=m.tex[ m.t[tidx].texId[kk1] ];
   int x0,y0,x1,y1;

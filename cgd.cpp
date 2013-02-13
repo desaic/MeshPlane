@@ -18,10 +18,10 @@ void add_v4(Mesh & m )
 {
   m.v4.resize(m.t.size());
   for (size_t ii=0; ii<m.t.size(); ii++) {
-    Vec3 a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
-    Vec3 b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
-    Vec3 n = a.cross(b);
-    double area = n.norm();
+    Vec3f a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
+    Vec3f b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
+    Vec3f n = cross(a,b);
+    double area = mag(n);
     n/=sqrt(area);
     m.v4[ii]=m.v[m.t[ii][0]] + n;
     m.t[ii].x[3]=m.v.size()+ii;
@@ -145,10 +145,10 @@ for(size_t tIdx=0; tIdx<m.t.size(); tIdx++) {
     std::map<int, real> val;
     for(int axis=0; axis<3; axis++) {
       int idx= VAR_IDX(m.t[tIdx][row]);
-      val[idx]=p.n.x[axis]   * wPt;
+      val[idx]=p.n.v[axis]   * wPt;
 
       idx= VAR_IDX(m.t[tIdx][row+1]);
-      val[idx]=-p.n.x[axis]  * wPt;
+      val[idx]=-p.n.v[axis]  * wPt;
     }
     addrow(val,ccs);
   }
@@ -281,11 +281,11 @@ void vertex2arr(const Mesh & m, double * x)
   int idx=0;
   for(int axis=0; axis<3; axis++) {
     for(size_t ii=0; ii<m.v.size(); ii++) {
-      x[idx]=m.v[ii].get(axis);
+      x[idx]=m.v[ii][axis];
       idx++;
     }
     for(size_t ii=0; ii<m.v4.size(); ii++) {
-      x[idx]=m.v4[ii].get(axis);
+      x[idx]=m.v4[ii][axis];
       idx++;
     }
   }
@@ -294,7 +294,7 @@ void vertex2arr(const Mesh & m, double * x)
 void array2vertex(const double * x, Mesh &m)
 {
   int idx=0;
-  std::vector<Vec3> v0 = m.v;
+  std::vector<Vec3f> v0 = m.v;
   for(int axis=0; axis<3; axis++) {
     for(size_t ii=0; ii<m.v.size(); ii++) {
       m.v[ii][axis] = x[idx];
@@ -485,11 +485,11 @@ void vertAdjList(Mesh& m, std::vector<std::set<int> > & vadj)
   }
 }
 
-void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
+void avgNbrPos(Mesh& m, std::vector<Vec3f> & nbrPos)
 {
   std::vector<int>cnt(m.v.size());
   for(size_t ii=0;ii<m.t.size();ii++){
-    Vec3 sum;
+    Vec3f sum;
     for(int jj=0;jj<3;jj++){
       sum += m.v[m.t[ii][jj]];
     }
@@ -498,7 +498,7 @@ void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
       cnt[m.t[ii][jj]]+=2;
     }
   }
-  std::vector<Vec3> v0 = m.v;
+  std::vector<Vec3f> v0 = m.v;
   for(size_t ii=0;ii<m.v.size();ii++){
     nbrPos[ii]/=cnt[ii];
   }
@@ -507,8 +507,8 @@ void avgNbrPos(Mesh& m, std::vector<Vec3> & nbrPos)
 void weighted_avg(Mesh& m)
 {
   std::vector<int>cnt(m.v.size());
-  std::vector<Vec3> projPos(m.v.size());
-  std::vector<Vec3>nbrPos(m.v.size());
+  std::vector<Vec3f> projPos(m.v.size());
+  std::vector<Vec3f>nbrPos(m.v.size());
   std::vector<Plane> plane;
 
   avgNbrPos(m,nbrPos);
@@ -524,9 +524,9 @@ void weighted_avg(Mesh& m)
     for(int jj=0;jj<3;jj++){
       int vidx = m.t[ii][jj];
       int label = m.t[ii].label;
-      real_t d = plane[label].c.dot(plane[label].n);
-      real_t disp=m.v[vidx].dot(plane[label].n);
-      Vec3 vp=m.v[vidx]+plane[label].n*(d-disp);
+      real_t d = dot(plane[label].c,plane[label].n);
+      real_t disp=dot(m.v[vidx],plane[label].n);
+      Vec3f vp=m.v[vidx]+plane[label].n*(d-disp);
       projPos[vidx]+=vp;
       cnt[vidx]++;
     }

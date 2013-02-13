@@ -26,7 +26,7 @@ void update_distance(std::vector<real_t > & dist,
 
 real_t tpdistance(Trig & t , Plane & p)
 {
-  real_t cost = (t.n-p.n).norm();
+  real_t cost = mag(t.n-p.n);
   //cost += distw*((t.c-p.c).norm());
   //cost /= (1+distw);
   return cost;

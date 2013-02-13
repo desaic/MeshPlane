@@ -4,8 +4,8 @@
 
 real_t BP::bpdistance(Trig & t , Plane & p)
 {
-  real_t cost = (t.n-p.n).norm();
-  cost += distw*((t.c-p.c).norm());
+  real_t cost = mag(t.n-p.n);
+  cost += distw*mag(t.c-p.c);
   cost /= (1+distw);
   return cost;
 }

@@ -26,7 +26,7 @@ class Mat3
        real_t m01, real_t m11, real_t m21,
        real_t m02, real_t m12, real_t m22);
   /**@brief each ROW is passed in as a vector*/
-  Mat3(const Vec3 & v1, const Vec3&v2,const Vec3 & v3);
+  Mat3(const Vec3f & v1, const Vec3f&v2,const Vec3f & v3);
   void inverse(Mat3& rv) const;
   //original matrix is destroyed
   void gauss_pivot(Mat3 & rv);

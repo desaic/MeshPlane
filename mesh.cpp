@@ -18,6 +18,39 @@
 #include <string.h>
 #include "imageio.h"
 #include "util.h"
+
+bool contains(int * a ,  int x, size_t size);
+
+bool Mesh::isNbr(int ta, int tb)
+{
+  for(int ii = 0; ii<3;ii++){
+    if(contains(t[ta].x,t[tb][ii],3)){
+      return true;
+    }
+  }
+  return false;
+}
+void BBox(const std::vector<Vec3f >& v, Vec3f & mn, Vec3f & mx)
+{
+  mn = v[0];
+  mx = v[0];
+  for(unsigned int ii = 1 ;ii<v.size();ii++){
+    for(int dim = 0 ; dim<3;dim++){
+      if(v[ii][dim]<mn[dim]){
+        mn[dim] = v[ii][dim];
+      }
+      if(v[ii][dim]>mx[dim]){
+        mx[dim] = v[ii][dim];
+      }
+    }
+  }
+}
+
+void BBox(const Mesh & m, Vec3f & mn, Vec3f & mx)
+{
+  BBox(m.v,mn,mx);
+}
+
 bool contains(int * a ,  int x, size_t size)
 {
   for(size_t ii=0; ii<size; ii++) {
@@ -132,16 +165,16 @@ void Mesh::get_normal_center()
   real_t max_area=0;
   for (unsigned int ii=0; ii<t.size(); ii++) {
     Trig & tt= t[ii];
-    Vec3 b=v[tt[2]]-v[tt[0]];
-    tt.n=(v[tt[1]]-v[tt[0]]).cross(b);
-    tt.A=tt.n.norm();
+    Vec3f b=v[tt[2]]-v[tt[0]];
+    tt.n=cross(v[tt[1]]-v[tt[0]],b);
+    tt.A=mag(tt.n);
 	//if(tt.A<0.000001){
 //std::cout<<"bad trig\n";
 	//}
     if(tt.A>max_area){
       max_area=tt.A;
     }
-    tt.n/=tt.n.norm();
+    tt.n/=mag(tt.n);
     for (int ii=0; ii<3; ii++) {
       tt.c+=v[tt[ii]];
     }
@@ -427,7 +460,7 @@ void Mesh::save_plane(const char * filename)
       continue;
     }
     int jj0=lines[ii][0].size()-1;
-    Vec3 n=Vec3(0,0,0);
+    Vec3f n=Vec3f(0,0,0);
     for(size_t jj=0;jj<lines[ii][0].size();jj++){
       for(int kk=0;kk<3;kk++){
         int kk1 = (kk+1)%3;
@@ -439,36 +472,36 @@ void Mesh::save_plane(const char * filename)
       }
       jj0=jj;
     }
-    n/=n.norm();
-    if(n.dot(planes[ii].n)<0){
+    n/=mag(n);
+    if(dot(n,planes[ii].n)<0){
       n=-n;
     }
     //n=planes[ii].n;
-    Vec3 v0=v[lines[ii][0][0]];
-//    Vec3 v1=v[lines[ii][0][1]];
-//    Vec3 v2=v[lines[ii][0][2]];
+    Vec3f v0=v[lines[ii][0][0]];
+//    Vec3f v1=v[lines[ii][0][1]];
+//    Vec3f v2=v[lines[ii][0][2]];
 
-    Vec3 ax, ay;
-    Vec3 arbit(1,0,0);
+    Vec3f ax, ay;
+    Vec3f arbit(1,0,0);
     if(std::abs(n[0])>0.9) {
-      arbit=Vec3(0,1,0);
+      arbit=Vec3f(0,1,0);
     }
-    ax = arbit.cross(n);
-    ax/=ax.norm();
-    ay=n.cross(ax);
-    ay/=ay.norm();
-    out<<n.x[0]<<" "<<n.x[1]<<" "<<n.x[2]<<"\n";
+    ax = cross(arbit,n);
+    ax/=mag(ax);
+    ay=cross(n,ax);
+    ay/=mag(ay);
+    out<<n.v[0]<<" "<<n.v[1]<<" "<<n.v[2]<<"\n";
     //save transformation from world coordinates to plane coordinates
     //normal is z axis
-    out<<ax.x[0]<<" "<<ax.x[1]<<" "<<ax.x[2]<<"\n";
-    out<<ay.x[0]<<" "<<ay.x[1]<<" "<<ay.x[2]<<"\n";
-    out<<v0.x[0]<<" "<<v0.x[1]<<" "<<v0.x[2]<<"\n";
+    out<<ax.v[0]<<" "<<ax.v[1]<<" "<<ax.v[2]<<"\n";
+    out<<ay.v[0]<<" "<<ay.v[1]<<" "<<ay.v[2]<<"\n";
+    out<<v0.v[0]<<" "<<v0.v[1]<<" "<<v0.v[2]<<"\n";
     for(size_t jj=0; jj<lines[ii].size(); jj++) {
       out<<lines[ii][jj].size()<<"\n";
       for(size_t kk=0; kk<lines[ii][jj].size(); kk++) {
-        Vec3 d = v[lines[ii][jj][kk]]-v0;
-        float x = (d.dot(ax));
-        float y = (d.dot(ay));
+        Vec3f d = v[lines[ii][jj][kk]]-v0;
+        float x = dot(d,(ax));
+        float y = dot(d,(ay));
         out<<x<<","<<y<<" ";
       }
       out<<"\n";
@@ -540,7 +573,7 @@ void Mesh::read_obj(std::ifstream & f)
     std::stringstream ss(line);
     ss>>tok;
     if(tok==vTok) {
-      Vec3 vec;
+      Vec3f vec;
       ss>>vec[0]>>vec[1]>>vec[2];
       v.push_back(vec);
     } else if(tok==fTok) {
@@ -565,7 +598,7 @@ void Mesh::read_obj(std::ifstream & f)
         t.push_back(trig);
       }
     } else if(tok==texTok) {
-      Vec3 texcoord;
+      Vec3f texcoord;
       ss>>texcoord[0];
       ss>>texcoord[1];
       tex.push_back(texcoord);
@@ -764,24 +797,24 @@ Mesh::Mesh(const char * filename, int _nLabel , bool _auto)
     read_ply2(f);
   }
   assign_color();
-  real_t mn[3]= {1,1,1};
-  real_t mx[3]= {-1,-1,-1};
+  float mn[3]= {1,1,1};
+  float mx[3]= {-1,-1,-1};
 
   //scale and translate to [0 , 1]
   if(autoscale){
   for (unsigned int dim = 0; dim<3; dim++) {
     for( size_t ii=0; ii<v.size(); ii++) {
-      mn [dim]= std::min(v[ii][dim],mn[dim]);
+      mn[dim]= std::min(v[ii][dim],mn[dim]);
       mx[dim] = std::max(v[ii][dim],mx[dim]);
     }
-    real_t translate = -0.5*(mx[dim]+mn[dim]);
+    float translate = -0.5*(mx[dim]+mn[dim]);
     //  translate = -mn[dim];
     for(size_t ii=0; ii<v.size(); ii++) {
       v[ii][dim]=(v[ii][dim]+translate);
     }
   }
 
-  real_t scale = 1/(mx[0]-mn[0]);
+  float scale = 1/(mx[0]-mn[0]);
   for(unsigned int dim=1; dim<3; dim++) {
     scale=std::min(1/(mx[dim]-mn[dim]),scale);
   }
@@ -800,7 +833,7 @@ Mesh::Mesh(const char * filename, int _nLabel , bool _auto)
 
 void Mesh::assign_color()
 {
-  color.push_back(Vec3(0.3,0.3,0.3));
+  color.push_back(Vec3f(0.3,0.3,0.3));
   int nc0=color.size();
   color.resize(nLabel);
   for (int ii=nc0; ii<nLabel; ii++) {
@@ -814,9 +847,9 @@ void Mesh::compute_norm()
 {
   n.resize(v.size());
   for(unsigned int ii=0; ii<t.size(); ii++) {
-    Vec3 a = v[t[ii][0]] - v[t[ii][1]];
-    Vec3 b = v[t[ii][2]] - v[t[ii][0]];
-    b=a.cross(b);
+    Vec3f a = v[t[ii][0]] - v[t[ii][1]];
+    Vec3f b = v[t[ii][2]] - v[t[ii][0]];
+    b=cross(a,b);
     for(int jj=0; jj<3; jj++) {
       if(t[ii][jj]>=(int)n.size()){
         std::cout<<"Input obj file buggy. Vertex index larger than number of vertices\n";
@@ -826,7 +859,7 @@ void Mesh::compute_norm()
     }
   }
   for(unsigned int ii=0; ii<v.size(); ii++) {
-    n[ii]/= n[ii].norm();
+    n[ii]/= mag(n[ii]);
   }
 }
 
@@ -835,17 +868,17 @@ void Mesh::drawPlane(int k)
   if(k>(int)planes.size()-1) {
     k=planes.size()-1;
   }
-  Vec3 nn = planes[k].n;
-  Vec3 v0=planes[k].c;
-  Vec3 ax, ay;
-  Vec3 arbit(1,0,0);
+  Vec3f nn = planes[k].n;
+  Vec3f v0=planes[k].c;
+  Vec3f ax(0), ay(0);
+  Vec3f arbit(1,0,0);
   if(std::abs(nn[0])>0.9) {
-    arbit=Vec3(0,1,0);
+    arbit=Vec3f(0,1,0);
   }
-  ax = arbit.cross(nn);
-  ax/=ax.norm();
-  ay=nn.cross(ax);
-  ay/=ay.norm();
+  ax = cross(arbit,nn);
+  normalize(ax);
+  ax=cross(nn,ax);
+  normalize(ay);
 
   glDisable(GL_LIGHTING);
   glBegin(GL_TRIANGLES);
@@ -860,9 +893,9 @@ void Mesh::drawPlane(int k)
     }
     if(tex_buf && tex.size()>0) {
       for(int jj=0; jj<3; jj++) {
-        Vec3 vert=v[t[ii][jj]];
+        Vec3f vert=v[t[ii][jj]];
         vert-=v0;
-        vert=Vec3(vert.dot(ax),vert.dot(ay),vert.dot(nn));
+        vert=Vec3f(dot(vert,ax),dot(vert,ay),dot(vert,nn));
         glNormal3f(0,0,1);
         glTexCoord2f(tex[t[ii].texId[jj]][0],tex[t[ii].texId[jj]][1]);
         glVertex3f(vert[0],vert[1],-1);
@@ -881,9 +914,9 @@ void Mesh::drawPlane(int k)
   glEnd();
 }
 
-void Mesh::draw(std::vector<Vec3>&v)
+void Mesh::draw(std::vector<Vec3f>&v)
 {
-  //glDisable(GL_LIGHTING);
+  glDisable(GL_LIGHTING);
 //  glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
@@ -917,10 +950,10 @@ void Mesh::draw(std::vector<Vec3>&v)
     GLfloat diffuse[4]= {sal,sal,sal,1.0f};
     glMaterialfv(GL_FRONT,GL_DIFFUSE,diffuse);
 */
-    Vec3 a = v[t[ii][1]] - v[t[ii][0]];
-    Vec3 b = v[t[ii][2]] - v[t[ii][0]];
-    b=-a.cross(b);
-    b= b/b.norm();
+    Vec3f a = v[t[ii][1]] - v[t[ii][0]];
+    Vec3f b = v[t[ii][2]] - v[t[ii][0]];
+    b=-cross(a,b);
+    normalize(b);
     if(tex_buf && tex.size()>0) {
       glNormal3f(n[t[ii][0]][0],n[t[ii][0]][1],n[t[ii][0]][2]);
       glTexCoord2f(tex[t[ii].texId[0]][0],tex[t[ii].texId[0]][1]);
@@ -950,11 +983,11 @@ void Mesh::draw(std::vector<Vec3>&v)
 
     }
     if(t[ii].label==highlight) {
-      glVertex3f(v[t[ii][0]][0]+b.x[0],v[t[ii][0]][1]+b.x[1],v[t[ii][0]][2]+b.x[2]);
+      glVertex3f(v[t[ii][0]][0]+b.v[0],v[t[ii][0]][1]+b.v[1],v[t[ii][0]][2]+b.v[2]);
 
-      glVertex3f(v[t[ii][1]][0]+b.x[0],v[t[ii][1]][1]+b.x[1],v[t[ii][1]][2]+b.x[2]);
+      glVertex3f(v[t[ii][1]][0]+b.v[0],v[t[ii][1]][1]+b.v[1],v[t[ii][1]][2]+b.v[2]);
 
-      glVertex3f(v[t[ii][2]][0]+b.x[0],v[t[ii][2]][1]+b.x[1],v[t[ii][2]][2]+b.x[2]);
+      glVertex3f(v[t[ii][2]][0]+b.v[0],v[t[ii][2]][1]+b.v[1],v[t[ii][2]][2]+b.v[2]);
     }
   }
   glEnd();
@@ -1049,8 +1082,8 @@ void Mesh::drawLines()
         glVertex3f(v[v1][0],v[v1][1],v[v1][2]);
 
         if((int)ii==highlight && planes.size()>ii) {
-          Vec3 v0hl=v[v0]+planes[ii].n;
-          Vec3 v1hl=v[v1]+planes[ii].n;
+          Vec3f v0hl=v[v0]+planes[ii].n;
+          Vec3f v1hl=v[v1]+planes[ii].n;
           glVertex3f(v[v0][0],v[v0][1],v[v0][2]);
           glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
           glVertex3f(v0hl[0],v0hl[1],v0hl[2]);
@@ -1065,6 +1098,7 @@ void Mesh::drawLines()
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_LIGHTING);
 }
+
 bool is_nbr(Trig & a, Trig&b, int vert)
 {
   for (int ii=0; ii<3; ii++) {
@@ -1151,7 +1185,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
 
   for(int ii=0; ii<nLabel; ii++) {
     if(count[ii]>0) {
-      plane[ii].n/=plane[ii].n.norm();
+      normalize(plane[ii].n);
       plane[ii].c/=count[ii];
 
     }
@@ -1180,10 +1214,10 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
     if(m.t[ii].A<0.000001){
       continue;
     }
-    Vec3 a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
-    Vec3 b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
-    Vec3 n = a.cross(b);
-    float area = n.norm();
+    Vec3f a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
+    Vec3f b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
+    Vec3f n = cross(a,b);
+    float area = mag(n);
     int label = m.t[ii].label;
     cnt[label]+=area;
     plane[label].n += n;
@@ -1195,7 +1229,7 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
     if(cnt[ii]>0){
       plane[ii].c/=cnt[ii];
       // plane[ii].n/=cnt[ii];
-      plane[ii].n/=plane[ii].n.norm();
+      normalize(plane[ii].n);
     }
   }
 }

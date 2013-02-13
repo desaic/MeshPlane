@@ -1,19 +1,18 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
-#include "mesh.hpp"
 
-#include "poly.hpp"
-#include "mincut.hpp"
-#include "kmeans.hpp"
-#include <string.h>
-#include <sstream>
-#include "mesh_query.h"
 #include "bp.hpp"
-#include <imageio.h>
-#include "saliency.hpp"
-#include"quat.h"
 #include "cgd.hpp"
+#include "kmeans.hpp"
+#include "mesh.hpp"
+#include "mesh_query.h"
+#include "mincut.hpp"
+#include <imageio.h>
+#include "poly.hpp"
+#include"quat.h"
+#include "saliency.hpp"
+#include "voxel.hpp"
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -28,6 +27,7 @@
 static Mesh * m;
 
 static Quat rot;
+static Voxel * voxel;
 static int planeId=0;
 static bool draw_tex=false;
 static bool draw_uv=false;
@@ -97,10 +97,7 @@ void display(void)
     }
     return;
   }
-
-
   if(running){
-
     wPt+=1;
     if(imgnum>230){
       wPt+=200;
@@ -111,9 +108,7 @@ void display(void)
     }
     m->compute_plane();
     cgd(*m);
-
   }
-
   gluLookAt(cam->eye[0], cam->eye[1],cam->eye[2],
 	    cam->at[0],cam->at[1], cam->at[2],
 	    0.0, 1.0, 0.0);
@@ -145,8 +140,11 @@ void display(void)
   angle=angle*180/3.14159;
 
   glRotatef(angle,axis[0],axis[1],axis[2]);
-  m->draw(m->v);
-
+//  m->draw(m->v);
+  
+  if(voxel){
+    voxel->draw();
+  }
   glBindFramebuffer(GL_FRAMEBUFFER, m->fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   m->drawCol();
@@ -349,12 +347,47 @@ void *scanHighlight(void * arg)
   }
   return 0;
 }
+
+void testSelfInter()
+{
+  m=new Mesh ("intersect.obj",1, true);
+  Vec3f mn,mx;
+  
+  BBox(*m,mn,mx);
+  voxel=new Voxel(mn,mx);
+  std::cout<<"Use Grid\n";
+  for(unsigned int ii = 0;ii<m->t.size();ii++){
+    int inter = voxel->intersect(ii,*m);
+    if(inter>=0){
+      std::cout<<inter<<" and "<<ii<<"\n";
+    }
+    voxel->insert(ii,*m);
+  }
+  
+  bool inter = m->self_intersect();
+  std::cout<<"expect intersection\n"<<inter<<"\n";
+  delete m;
+  
+  m=new Mesh ("nointer.obj",1, true);
+  
+  
+  inter = m->self_intersect();
+  std::cout<<"expect no intersection\n"<<inter<<"\n";
+  delete m;  
+}
+
 int main(int argc, char** argv)
 {
   if(argc<2){
     printf("%s filename\n",argv[0]);
     exit(0);
   }
+
+  if(strcmp(argv[1],"-test")==0){
+    testSelfInter();
+ //   return 0;
+  }
+  
   glutInit(&argc, argv);
   int nLabel=50;
   bool run=false;
@@ -491,10 +524,10 @@ int main(int argc, char** argv)
     dataCostW=10000;
     //smoothW=2500;
     saliency_weight=10;
-  distw=1;
+    distw=1;
     MC_ITER=1;
     m->compute_plane();
-  //  running=true;
+    //  running=true;
     pthread_t thread;
     pthread_create(&thread, 0, iterate,(void*)m);
     pthread_detach(thread);
@@ -510,3 +543,4 @@ int main(int argc, char** argv)
   return 0;
 //p=new Poly(m);
 }
+

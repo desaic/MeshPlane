@@ -37,21 +37,26 @@ typedef Octree<IntSet> Grid;
 
 class Voxel{
 public:
-  Voxel(Mesh & m);
+  ///@param _res must be power of 2
+  Voxel(Vec3f mn, Vec3f mx,int _res = 128);
+  ~Voxel();
+  Grid * grid;
+  Vec3f gridlen;
+  Vec3f orig;
   int res;
-  real_t gridlen;
-  Grid grid;
   void draw();
   ///@brief insert a triangle
   ///@param tidx triangle index
-  void insert(Mesh & m , int tidx);
-  void remove(Mesh & m , int tidx);
+  void insert(int tidx, Mesh & m);
+  void remove(int tidx, Mesh & m);
+  int intersect(int tidx, Mesh & m);
 private:
   static Mesh cube;
   int clampIdx(int idx);
   void bbox(int ii, Mesh & m , int * tmn, int * tmx);
   void rasterize(int tidx, Mesh & m , Grid & grid);
-  void vec2grid(Vec3 & v, GridIdx & grid);
+  ///@brief computes grid index given coordinate
+  void vec2grid(Vec3f & v, GridIdx & grid);
   bool trigCubeIntersect(int tidx, const Mesh & m ,
                          GridIdx & cube);
 };

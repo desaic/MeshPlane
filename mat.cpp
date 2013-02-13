@@ -268,11 +268,11 @@ Mat3::Mat3(real_t m00, real_t m10, real_t m20,
   _m[2][2] = m22;
 }
 
-Mat3::Mat3(const Vec3& v1,const Vec3& v2,const Vec3& v3)
+Mat3::Mat3(const Vec3f& v1,const Vec3f& v2,const Vec3f& v3)
 {
   for(int ii=0; ii<3; ii++) {
-    _m[ii][0]=v1.get(ii);
-    _m[ii][1]=v2.get(ii);
-    _m[ii][2]=v3.get(ii);
+    _m[ii][0]=v1[ii];
+    _m[ii][1]=v2[ii];
+    _m[ii][2]=v3[ii];
   }
 }

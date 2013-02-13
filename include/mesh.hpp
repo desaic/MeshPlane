@@ -1,10 +1,12 @@
 #ifndef MESH_H
 #define MESH_H
+
+#include <map>
 #include <vector>
 #include <fstream>
 #include <GL/glew.h>
+#include "vec.h"
 #include "math.hpp"
-
 #include <GL/gl.h>
 //by default counterclockwise winding is front face
 struct Trig{
@@ -14,15 +16,15 @@ struct Trig{
   int operator[](const int i)const {return x[i];}
   int x[4];
   int label;
-  Vec3 n,c;
+  Vec3f n,c;
   real_t A;
   int texId[3];
 };
 
 
 struct Plane{
-  Vec3 c;
-  Vec3 n;
+  Vec3f c;
+  Vec3f n;
   real_t A;
   Plane():A(0){};
   ~Plane(){};
@@ -56,23 +58,23 @@ struct EdgeId{
   }
 };
 
-#include <map>
 class Mesh{
 public:
   int nLabel;
   std::map<int,bool>bad;
   bool self_intersect();
-  std::vector<Vec3>v;
-  std::vector<Vec3>tex;
-  std::vector<Vec3>v0;
+  bool isNbr(int ta, int tb);
+  std::vector<Vec3f>v;
+  std::vector<Vec3f>tex;
+  std::vector<Vec3f>v0;
   std::vector<Trig>t;
-  std::vector<Vec3>n;
-  std::vector<Vec3>v4;
+  std::vector<Vec3f>n;
+  std::vector<Vec3f>v4;
   std::vector<std::vector<int> >  adjMat;
   Mesh():v(0),t(0),remap_tex(0){}
   Mesh(const char * filename,int _nLabel=50, bool _auto=true);
   void adjlist();
-  void draw(std::vector<Vec3>&v);
+  void draw(std::vector<Vec3f>&v);
   void drawCol();
   void drawLines();
   void drawPlane(int k);
@@ -101,7 +103,7 @@ public:
 private:
   void compute_norm();
   void fix_inner_cluster();
-  std::vector<Vec3>color;
+  std::vector<Vec3f>color;
   std::vector< std::vector<std::vector<int> > > lines;
   GLuint texture;
   unsigned char * tex_buf;
@@ -117,4 +119,6 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel);
 void get_plane(Mesh & m , std::vector<Plane> & plane);
 real_t mcdistance( Plane & p, Trig &t);
 unsigned int b2int(GLubyte * b);
+void BBox(const std::vector<Vec3f >& v, Vec3f & mn, Vec3f & mx);
+void BBox(const Mesh & m, Vec3f & mn, Vec3f & mx);
 #endif
