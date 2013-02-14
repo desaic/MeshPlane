@@ -140,9 +140,10 @@ void display(void)
   angle=angle*180/3.14159;
 
   glRotatef(angle,axis[0],axis[1],axis[2]);
-//  m->draw(m->v);
-  
-  if(voxel){
+  if(m!=0){
+    m->draw(m->v);
+  }
+  if(voxel!=0){
     voxel->draw();
   }
   glBindFramebuffer(GL_FRAMEBUFFER, m->fbo);
@@ -367,10 +368,7 @@ void testSelfInter()
   bool inter = m->self_intersect();
   std::cout<<"expect intersection\n"<<inter<<"\n";
   delete m;
-  
   m=new Mesh ("nointer.obj",1, true);
-  
-  
   inter = m->self_intersect();
   std::cout<<"expect no intersection\n"<<inter<<"\n";
   delete m;  

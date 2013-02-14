@@ -121,4 +121,5 @@ real_t mcdistance( Plane & p, Trig &t);
 unsigned int b2int(GLubyte * b);
 void BBox(const std::vector<Vec3f >& v, Vec3f & mn, Vec3f & mx);
 void BBox(const Mesh & m, Vec3f & mn, Vec3f & mx);
+void BBoxUnion(const std::vector<Vec3f >& v, Vec3f & mn, Vec3f & mx);
 #endif

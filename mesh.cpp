@@ -30,6 +30,21 @@ bool Mesh::isNbr(int ta, int tb)
   }
   return false;
 }
+
+void BBoxUnion(const std::vector<Vec3f >& v, Vec3f & mn, Vec3f & mx)
+{
+  for(unsigned int ii = 0;ii<v.size();ii++){
+    for(int dim = 0 ; dim<3;dim++){
+      if(v[ii][dim]<mn[dim]){
+        mn[dim] = v[ii][dim];
+      }
+      if(v[ii][dim]>mx[dim]){
+        mx[dim] = v[ii][dim];
+      }
+    }
+  }
+}
+
 void BBox(const std::vector<Vec3f >& v, Vec3f & mn, Vec3f & mx)
 {
   mn = v[0];
