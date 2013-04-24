@@ -519,7 +519,7 @@ int main(int argc, char** argv)
     wV0=20;
     wPt=1;
     vW=1;
-    dataCostW=10000;
+    dataCostW=1000;
     //smoothW=2500;
     saliency_weight=10;
     distw=1;
