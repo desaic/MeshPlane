@@ -295,64 +295,19 @@ void vertex2arr(const Mesh & m, double * x)
 void array2vertex(const double * x, Mesh &m)
 {
   int idx=0;
-  std::vector<Vec3f> newV(m.v.size());// = m.v;
+  std::vector<Vec3f> v0 = m.v;
   for(int axis=0; axis<3; axis++) {
-    for(size_t ii=0; ii<newV.size(); ii++) {
-      newV[ii][axis] = x[idx];
+    for(size_t ii=0; ii<m.v.size(); ii++) {
+      m.v[ii][axis] = x[idx];
+      idx++;
+    }
+
+    for(size_t ii=0; ii<m.v4.size(); ii++) {
+      m.v4[ii][axis]=x[idx];
       idx++;
     }
   }
-  Vec3f mn,mx;
-  BBox(m.v,mn,mx);
-  BBoxUnion(newV,mn,mx);
-  Voxel voxel(mn,mx);
-  for(size_t ii = 0;ii<m.t.size();ii++){
-    voxel.insert(ii,m);
-  }
-  std::vector<std::vector<int> >trigList(newV.size());
-  for (unsigned int ii=0; ii<m.t.size(); ii++) {
-    for (unsigned int jj=0; jj<3; jj++) {
-      int vidx=m.t[ii][jj];
-      trigList[vidx].push_back(ii);
-    }
-  }
-  Vec3f v0;
-  for(size_t ii=0; ii<newV.size(); ii++) {
-    for(size_t jj = 0;jj<trigList[ii].size();jj++){
-      voxel.remove(trigList[ii][jj],m);
-    }
-    v0=m.v[ii];
-    m.v[ii] = newV[ii];
-    bool hasInter=false;
-    for(size_t jj = 0;jj<trigList[ii].size();jj++){
-      if(voxel.intersect(trigList[ii][jj],m)>=0){
-        hasInter=true;
-        break;
-      }
-  //    voxel.insert(trigList[ii][jj]);
-    }
-    if(hasInter){
-      m.v[ii]=v0;
-    }
-    for(size_t jj = 0;jj<trigList[ii].size();jj++){
-      voxel.remove(trigList[ii][jj],m);
-    }
-  }
-
-//   int iter=0;
-//   if(m.checkIntersect){
-//   while(m.self_intersect()){
-//     std::map<int,bool>::iterator it;
-//     for(it = m.bad.begin();it!=m.bad.end();it++){
-//     for(int ii=0;ii<3;ii++){
-//       int vidx=m.t[it->first][ii];
-//       m.v[vidx]=v0[vidx];
-//     }
-//     }
-//     std::cout<<iter<<" intersection\n";
-//     iter++;
-//   }
-//   }
+  
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)

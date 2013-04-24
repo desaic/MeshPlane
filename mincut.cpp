@@ -11,14 +11,14 @@ float distw = 10;
 real_t saliency_weight=1;
 float L1n(Vec3f v)
 {
-  return std::abs(v[0]+v[1]+v[2]);
+  return std::abs(v[0])+std::abs(v[1])+std::abs(v[2]);
 }
 real_t mcdistance( Plane & p, Trig &t)
 {
 
   float plane_d = dot(p.n,p.c);
   float d = dot(t.c,p.n);
-  real_t  cost = distw * (plane_d-d);
+  real_t  cost = distw * std::abs(plane_d-d);
   cost += L1n(t.n- p.n);
       cost /= (1+distw);
       cost*=t.A;

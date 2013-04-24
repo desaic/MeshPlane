@@ -522,7 +522,7 @@ int main(int argc, char** argv)
     dataCostW=1000;
     //smoothW=2500;
     saliency_weight=10;
-    distw=1;
+    distw=3;
     MC_ITER=1;
     m->compute_plane();
     //  running=true;
