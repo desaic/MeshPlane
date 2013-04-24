@@ -142,6 +142,8 @@ void Mesh::get_normal_center()
       max_area=tt.A;
     }
     tt.n/=tt.n.norm();
+//    std::cout<<"ttc "<<tt.c[0];
+    tt.c=Vec3(0,0,0);
     for (int ii=0; ii<3; ii++) {
       tt.c+=v[tt[ii]];
     }
@@ -1166,6 +1168,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
       m.t[r].label=ii;
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
+      std::cout<<r<<" "<<ii<<" "<<plane[ii].c[0]<<" "<<plane[ii].n[0]<<"\n";
       update_distance(dist, cdf, plane,m,ii);
     }
   }

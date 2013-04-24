@@ -24,6 +24,9 @@ void add_v4(Mesh & m )
     double area = n.norm();
     n/=sqrt(area);
     m.v4[ii]=m.v[m.t[ii][0]] + n;
+   // if(ii==0){
+  //    std::cout<<"v4"<<m.v4[0][0]<<"\n";;
+  //  }
     m.t[ii].x[3]=m.v.size()+ii;
   }
 }
@@ -126,7 +129,9 @@ for(int axis=0; axis<3; axis++) {
         }
         add_times(rowVal, neiborRowVal,-(1.0/m.adjMat[tIdx].size()));
         scale(rowVal, wS);
-
+//if(axis==0 && ii==0 && tIdx==0){	
+//	  std::cout<<"rowVal"<<rowVal[m.t[0][0]]<<"\n";
+//	}
         addrow(rowVal, ccs, nvar*axis);
       }
     }
@@ -149,6 +154,10 @@ for(size_t tIdx=0; tIdx<m.t.size(); tIdx++) {
 
       idx= VAR_IDX(m.t[tIdx][row+1]);
       val[idx]=-p.n.x[axis]  * wPt;
+      if( tIdx==0){	
+	  std::cout<<"val"<<val[idx]<<"\n";
+	  std::cout<<"plane"<<p.n.x[axis]<<"\n";
+	}
     }
     addrow(val,ccs);
   }
