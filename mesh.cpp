@@ -1,5 +1,5 @@
 #include "mesh.hpp"
-#include "voxel.hpp"
+//#include "voxel.hpp"
 
 #include <fstream>
 #include <iostream>
