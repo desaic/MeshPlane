@@ -1,5 +1,5 @@
 #include "mesh.hpp"
-#include "voxel.hpp"
+//#include "voxel.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -189,8 +189,14 @@ void Mesh::get_normal_center()
     if(tt.A>max_area){
       max_area=tt.A;
     }
+<<<<<<< HEAD
     tt.n/=mag(tt.n);
     tt.c=Vec3f(0,0,0);
+=======
+    tt.n/=tt.n.norm();
+//    std::cout<<"ttc "<<tt.c[0];
+    tt.c=Vec3(0,0,0);
+>>>>>>> b60ef512fc871545faabf4521790c4a308179625
     for (int ii=0; ii<3; ii++) {
       tt.c+=v[tt[ii]];
     }

@@ -7,7 +7,7 @@
 int minc_nlabel=50;
 float dataCostW=100;
 float smoothW=10;
-float distw = 10;
+float distw = 30;
 real_t saliency_weight=1;
 float L1n(Vec3f v)
 {
@@ -16,10 +16,17 @@ float L1n(Vec3f v)
 real_t mcdistance( Plane & p, Trig &t)
 {
 
+<<<<<<< HEAD
   float plane_d = dot(p.n,p.c);
   float d = dot(t.c,p.n);
   real_t  cost = distw * std::abs(plane_d-d);
   cost += L1n(t.n- p.n);
+=======
+  float plane_d = p.n.dot(p.c);
+      float d = t.c.dot(p.n);
+      real_t  cost = distw * std::abs(plane_d-d);
+      cost += (t.n- p.n).L1n();
+>>>>>>> b60ef512fc871545faabf4521790c4a308179625
       cost /= (1+distw);
       cost*=t.A;
   return cost;
