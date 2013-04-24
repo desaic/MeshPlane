@@ -190,6 +190,7 @@ void Mesh::get_normal_center()
       max_area=tt.A;
     }
     tt.n/=mag(tt.n);
+    tt.c=Vec3f(0,0,0);
     for (int ii=0; ii<3; ii++) {
       tt.c+=v[tt[ii]];
     }
@@ -861,6 +862,9 @@ void Mesh::assign_color()
 void Mesh::compute_norm()
 {
   n.resize(v.size());
+  for(unsigned int ii=0; ii<v.size(); ii++) {
+    n[ii] = Vec3f(0,0,0);
+  }
   for(unsigned int ii=0; ii<t.size(); ii++) {
     Vec3f a = v[t[ii][0]] - v[t[ii][1]];
     Vec3f b = v[t[ii][2]] - v[t[ii][0]];
@@ -1215,6 +1219,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
       m.t[r].label=ii;
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
+      std::cout<<r<<" "<<ii<<" "<<plane[ii].c[0]<<" "<<plane[ii].n[0]<<"\n";
       update_distance(dist, cdf, plane,m,ii);
     }
   }

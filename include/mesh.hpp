@@ -26,7 +26,9 @@ struct Plane{
   Vec3f c;
   Vec3f n;
   real_t A;
-  Plane():A(0){};
+  Plane():c(Vec3f(0,0,0)),
+    n(Vec3f(0,0,0)),
+    A(0){};
   ~Plane(){};
 };
 

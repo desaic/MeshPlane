@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include "randomc.h"
-CRandomMersenne rndg;
+CRandomMersenne rndg(123);
 
 void CRandomMersenne::Init0(int seed) {
    // Seed generator
