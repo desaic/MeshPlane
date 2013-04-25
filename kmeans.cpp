@@ -73,6 +73,7 @@ void findCentroids(Mesh & m, std::vector<Plane> & plane, std::vector<int> &centr
     if(centroid[ll]<0
        ||dist < minDist[ll]){
       centroid[ll]=ii;
+      std::cout<<"centroid "<<centroid[ll]<<"\n";
       minDist[ll]=dist;
       continue;
     }
@@ -88,7 +89,7 @@ void flood(Mesh & m, const std::vector<int> & centroids,
   for(size_t ii=0;ii<centroids.size();ii++){
     int cidx=centroids[ii];
     if(cidx<0){
-      std::cout<<"wtf\n";
+      std::cout<<ii<<" "<<cidx<<"wtf\n";
     }
     real_t dist = tpdistance(m.t[cidx], plane[ii]);
     pq.push(TrigDist(cidx, m.t[cidx].label, dist) );

@@ -313,7 +313,7 @@ void* iterate(void* arg){
   dataCostW=10000;
 //  smoothW=400;
   saliency_weight=5;
-	distw=5;
+	distw=15;
 
  // BP bp(*m);
   initKmeans(*m);
@@ -450,7 +450,7 @@ int main(int argc, char** argv)
   if(draw_tex||draw_uv){
     glutInitWindowSize (2400, 2400);
   }else{
-    glutInitWindowSize (800 , 600);
+    glutInitWindowSize (1280 , 720);
   }
   //glutInitWindowPosition (100, 100);
   glutCreateWindow (argv[0]);

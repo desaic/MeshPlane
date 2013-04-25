@@ -7,7 +7,7 @@
 int minc_nlabel=50;
 float dataCostW=100;
 float smoothW=10;
-float distw = 10;
+float distw = 30;
 real_t saliency_weight=1;
 float L1n(Vec3f v)
 {

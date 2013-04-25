@@ -155,10 +155,10 @@ for(size_t tIdx=0; tIdx<m.t.size(); tIdx++) {
 
       idx= VAR_IDX(m.t[tIdx][row+1]);
       val[idx]=-p.n[axis]  * wPt;
-      if( tIdx==0){	
-	  std::cout<<"val"<<val[idx]<<"\n";
-	  std::cout<<"plane"<<p.n[axis]<<"\n";
-	}
+   //   if( tIdx==0){	
+//	  std::cout<<"val"<<val[idx]<<"\n";
+//	  std::cout<<"plane"<<p.n[axis]<<"\n";
+//	}
     }
     addrow(val,ccs);
   }
@@ -304,19 +304,62 @@ void vertex2arr(const Mesh & m, double * x)
 void array2vertex(const double * x, Mesh &m)
 {
   int idx=0;
-  std::vector<Vec3f> v0 = m.v;
+  std::vector<Vec3f> newV(m.v.size());
+  std::vector<Vec3f> v4 = m.v4;
   for(int axis=0; axis<3; axis++) {
     for(size_t ii=0; ii<m.v.size(); ii++) {
       m.v[ii][axis] = x[idx];
       idx++;
     }
 
-    for(size_t ii=0; ii<m.v4.size(); ii++) {
-      m.v4[ii][axis]=x[idx];
+    for(size_t ii=0; ii<m.t.size(); ii++) {
+      v4[ii][axis]=x[idx];
       idx++;
     }
   }
   
+  //bounding box
+//   Vec3f mn,mx;
+//   BBox(m.v,mn,mx);
+//   BBoxUnion(newV,mn,mx);
+//   Voxel voxel(mn,mx);
+//   //add old triangles to grid data structure
+//   for(size_t ii = 0;ii<m.t.size();ii++){
+//     voxel.insert(ii,m);
+//   }
+//   std::vector<std::vector<int> >trigList(newV.size());
+//   for (unsigned int ii=0; ii<m.t.size(); ii++) {
+//     for (unsigned int jj=0; jj<3; jj++) {
+//       int vidx=m.t[ii][jj];
+//       trigList[vidx].push_back(ii);
+//     }
+//   }
+//   
+//   Vec3f v0;
+//   //remove triangles adjacent to vi
+//   for(size_t ii=0; ii<newV.size(); ii++) {
+//     for(size_t jj = 0;jj<trigList[ii].size();jj++){
+//       voxel.remove(trigList[ii][jj],m);
+//     }
+//     v0=m.v[ii];
+//     m.v[ii] = newV[ii];
+//     bool hasInter=false;
+//     //check if any triangles adjacent to vi intersect other triangles in the mesh
+//     for(size_t jj = 0;jj<trigList[ii].size();jj++){
+//       if(voxel.intersect(trigList[ii][jj],m)>=0){
+//         hasInter=true;
+//         break;
+//       }
+//   //    voxel.insert(trigList[ii][jj]);
+//     }
+//     if(hasInter){
+//       m.v[ii]=v0;
+//     }
+//     //add back triangles adjacent to vi
+//     for(size_t jj = 0;jj<trigList[ii].size();jj++){
+//       voxel.insert(trigList[ii][jj],m);
+//     }
+//   }
 }
 
 void printAB(CCS&ccs, std::vector<double > & b, const double *x)
@@ -443,19 +486,19 @@ void cgd(Mesh & m)
   if(ret<0) {
     printf("optimization error\n");
    }
-  /* gradient descent
-  double * g = new double[width];
-  double * Ag=new double[width];
-  for(int iter=0;iter<maxIter;iter++){
-    A.MultiplyVector(x, g);
-    subtract(g, ATb,width);
-    real_t alpha = solver.DotProduct(g,g);
-    A.MultiplyVector(g,Ag);
-    alpha /= solver.DotProduct(g,Ag);
-    scale(g,alpha,width);
-    subtract(x, g, width);
-  }
-  */
+//   gradient descent
+//  double * g = new double[width];
+//  double * Ag=new double[width];
+//  for(int iter=0;iter<maxIter;iter++){
+//    A.MultiplyVector(x, g);
+//    subtract(g, ATb,width);
+//    real_t alpha = solver.DotProduct(g,g);
+//    A.MultiplyVector(g,Ag);
+//    alpha /= solver.DotProduct(g,Ag);
+//    scale(g,alpha,width);
+//    subtract(x, g, width);
+//  }
+ 
   A.CheckLinearSystemSolution(x,ATb);
   printf("\n");
   array2vertex(x,m);

@@ -935,7 +935,7 @@ void Mesh::drawPlane(int k)
 
 void Mesh::draw(std::vector<Vec3f>&v)
 {
-  glDisable(GL_LIGHTING);
+//  glDisable(GL_LIGHTING);
 //  glDisable(GL_TEXTURE_2D);
 
   glBegin(GL_TRIANGLES);
@@ -1219,7 +1219,7 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
       m.t[r].label=ii;
       plane[ii].n = m.t[r].n;
       plane[ii].c = m.t[r].c;
-      std::cout<<r<<" "<<ii<<" "<<plane[ii].c[0]<<" "<<plane[ii].n[0]<<"\n";
+     // std::cout<<r<<" "<<ii<<" "<<plane[ii].c[0]<<" "<<plane[ii].n[0]<<"\n";
       update_distance(dist, cdf, plane,m,ii);
     }
   }
