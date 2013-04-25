@@ -154,10 +154,10 @@ for(size_t tIdx=0; tIdx<m.t.size(); tIdx++) {
 
       idx= VAR_IDX(m.t[tIdx][row+1]);
       val[idx]=-p.n.x[axis]  * wPt;
-      if( tIdx==0){	
-	  std::cout<<"val"<<val[idx]<<"\n";
-	  std::cout<<"plane"<<p.n.x[axis]<<"\n";
-	}
+//       if( tIdx==0){	
+// 	  std::cout<<"val"<<val[idx]<<"\n";
+// 	  std::cout<<"plane"<<p.n.x[axis]<<"\n";
+// 	}
     }
     addrow(val,ccs);
   }

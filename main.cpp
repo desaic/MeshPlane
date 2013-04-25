@@ -313,8 +313,9 @@ void* iterate(void* arg){
   vW=1;
   dataCostW=10000;
 //  smoothW=400;
+ //   smoothW=50;
   saliency_weight=5;
-	distw=5;
+	distw=15;
 
  // BP bp(*m);
   initKmeans(*m);
