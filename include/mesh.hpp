@@ -102,10 +102,10 @@ public:
   std::map<EdgeId, real_t > usr_weit;
   GLuint fbo;
   bool checkIntersect;
+  std::vector<Vec3f>color;
 private:
   void compute_norm();
   void fix_inner_cluster();
-  std::vector<Vec3f>color;
   std::vector< std::vector<std::vector<int> > > lines;
   GLuint texture;
   unsigned char * tex_buf;

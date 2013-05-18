@@ -611,7 +611,9 @@ void Mesh::read_obj(std::ifstream & f)
           trig[ii]--;
           trig.texId[ii]=0;
         }
-        t.push_back(trig);
+        trig.label=t.size();
+	t.push_back(trig);
+	
       }
     } else if(tok==texTok) {
       Vec3f texcoord;
@@ -620,6 +622,7 @@ void Mesh::read_obj(std::ifstream & f)
       tex.push_back(texcoord);
     }
   }
+  nLabel=t.size();
 }
 
 void Mesh::read_ply(std::ifstream & f)
@@ -769,6 +772,7 @@ void Mesh::save_obj(const char * filename)
   std::string texTok("vt");
   char bslash='/';
   std::string tok;
+  out<<"mtllib mat.mtl\n\n";
   for(size_t ii=0;ii<v.size();ii++){
     out<<vTok<<" "<<v[ii][0]<<" "<<v[ii][1]<<" "<<v[ii][2]<<"\n";
   }
@@ -783,11 +787,21 @@ void Mesh::save_obj(const char * filename)
     }
   }else{
     for(size_t ii=0;ii<t.size();ii++){
+      out<<"usemtl mat"<<t[ii].label<<"\n";
       out<<fTok<<" "<<t[ii][0]+1<<" "<<t[ii][1]+1<<" "<<t[ii][2]+1<<"\n";
     }
   }
+  std::ofstream mtl("mat.mtl");
+  for(int ii = 0;ii<nLabel;ii++){
+    mtl<<"newmtl mat"<<ii<<"\n";
+    mtl<<"Ka 0.1 0.1 0.1\n";
+    mtl<<"kd "<<color[ii][0]<<" "<<color[ii][1]<<" "<<color[ii][2]<<"\n";
+    mtl<<"Ks 0.9 0.9 0.9\n";
+    mtl<<"Tr 1.0\nillum 2\nNs 25.0\n\n";
+  }
 
   out.close();
+  mtl.close();
 }
 
 Mesh::Mesh(const char * filename, int _nLabel , bool _auto)
@@ -887,6 +901,9 @@ void Mesh::drawPlane(int k)
   if(k>(int)planes.size()-1) {
     k=planes.size()-1;
   }
+  if(k<0){
+    return;
+  }
   Vec3f nn = planes[k].n;
   Vec3f v0=planes[k].c;
   Vec3f ax(0), ay(0);
@@ -896,11 +913,23 @@ void Mesh::drawPlane(int k)
   }
   ax = cross(arbit,nn);
   normalize(ax);
-  ax=cross(nn,ax);
+  ay=cross(nn,ax);
   normalize(ay);
-
-  glDisable(GL_LIGHTING);
+  
+  int size = 1;
+  Vec3f v1 = v0+ax*size;
+  Vec3f v2 = v0+ay*size;
+  //glDisable(GL_LIGHTING);
+  //glDisable(GL_TEXTURE_2D);
+ // glDisable(GL_TEXTURE);
+  GLfloat diffuse[4]={color[k][0],color[k][1],color[k][2],1};
+  glMaterialfv(GL_DIFFUSE,GL_FRONT,diffuse);
   glBegin(GL_TRIANGLES);
+  glNormal3f(nn[0],nn[1],nn[2]);
+  glVertex3f(v0[0],v0[1],v0[2]);
+  glVertex3f(v1[0],v1[1],v1[2]);
+  glVertex3f(v2[0],v2[1],v2[2]);
+  
   if(tex_buf) {
     glBindTexture(GL_TEXTURE_2D,texture);
   }

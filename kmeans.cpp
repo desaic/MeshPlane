@@ -159,6 +159,8 @@ void runKmeans(Mesh & m)
 {
   std::vector<Plane> plane;
   std::vector<int>centroid;
+  //M step
   findCentroids(m,plane,centroid);
+  //E step. not really
   flood(m,centroid,plane);
 }

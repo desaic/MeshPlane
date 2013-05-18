@@ -18,6 +18,7 @@
 #include <GL/glu.h>
 #include <GL/freeglut.h>
 #include <cmath>
+#include <pthread.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,12 @@ static Voxel * voxel;
 static int planeId=0;
 static bool draw_tex=false;
 static bool draw_uv=false;
+static int imgnum=0;
+bool running=false;
+int ldown;
+int oldx,oldy;
+extern int minc_nlabel;
+
 //static Poly * p;
 struct Cam{
   Cam():rotx(0),roty(0){
@@ -70,15 +77,15 @@ void init(void)
   }
 }
 
-static int imgnum=0;
-bool running=false;
+
+
 void display(void)
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   if(draw_tex){
-    m->drawPlane(planeId);
+ //   m->drawPlane(planeId);
     glFlush ();
     if(planeId<(int)m->planes.size()){
       std::stringstream ss;
@@ -142,6 +149,12 @@ void display(void)
   glRotatef(angle,axis[0],axis[1],axis[2]);
   if(m!=0){
     m->draw(m->v);
+//    m->drawPlane(1);
+//    m->drawPlane(2);
+ //   m->drawPlane(3);
+ //   m->drawPlane(4);
+ //   m->drawPlane(5);
+ //   m->drawPlane(6);
   }
   if(voxel!=0){
     voxel->draw();
@@ -245,8 +258,6 @@ void keyboard(unsigned char key,int x, int y)
   glutPostRedisplay();
 }
 
-int ldown;
-int oldx,oldy;
 
 void mouse(int button, int state, int x, int y)
 {
@@ -298,9 +309,6 @@ void animate(int t)
 
 }
 
-#include <pthread.h>
-
-extern int minc_nlabel;
 void* iterate(void* arg){
   int ITER=100;
   MC_ITER=1;
@@ -313,7 +321,7 @@ void* iterate(void* arg){
   dataCostW=10000;
 //  smoothW=400;
   saliency_weight=5;
-	distw=15;
+  distw=15;
 
  // BP bp(*m);
   initKmeans(*m);
