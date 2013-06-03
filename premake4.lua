@@ -12,10 +12,12 @@ links{"GLEW", "GLU", "glut", "GL"}
 links{"mesh_query", "png", "pthread"}
 buildoptions { "-std=c++0x"}
 configuration {"Debug"}
-              defines{"Debug"}
-              flags{"Symbols"}
+targetdir "debug"
+defines{"Debug"}
+flags{"Symbols"}
               
-              configuration {"Release"}
-              defines{"NDebug"}
-              flags{"Optimize"}
+configuration {"Release"}
+targetdir "release"
+defines{"NDebug"}
+flags{"Optimize"}
               
