@@ -9,8 +9,7 @@
 #include "mesh_query.h"
 #include "mincut.hpp"
 #include <imageio.h>
-#include "poly.hpp"
-#include"quat.h"
+#include "quat.h"
 #include "saliency.hpp"
 #include "voxel.hpp"
 
@@ -38,7 +37,6 @@ int ldown;
 int oldx,oldy;
 extern int minc_nlabel;
 
-//static Poly * p;
 struct Cam{
   Cam():rotx(0),roty(0){
     for (int ii=0;ii<3;ii++){
