@@ -2,7 +2,6 @@
 #include <windows.h>
 #endif
 
-#include "bp.hpp"
 #include "cgd.hpp"
 #include "kmeans.hpp"
 #include "mesh.hpp"
