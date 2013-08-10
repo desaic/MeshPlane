@@ -316,13 +316,12 @@ void* iterate(void* arg){
   saliency_weight=5;
   distw=15;
 
- // BP bp(*m);
   initKmeans(*m);
   for(int ii=0;ii<ITER;ii++){
     wPt+=3;
     printf("iter %d\n",ii);
-//    runMincut(*m);
-    runKmeans(*m);
+    runMincut(*m);
+//    runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);

@@ -1260,14 +1260,15 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
   plane.resize(m.nLabel);
   std::vector<float > cnt (m.nLabel,0);
   for(size_t ii=0; ii<m.t.size(); ii++) {
-    if(m.t[ii].A<0.000001){
-      continue;
-    }
+  //  if(m.t[ii].A<0.000001){
+  //    continue;
+  //  }
     Vec3f a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];
     Vec3f b = m.v[m.t[ii][2]] -  m.v[m.t[ii][0]];
     Vec3f n = cross(a,b);
     float area = mag(n);
     int label = m.t[ii].label;
+    std::cout<<label<<"\n";
     cnt[label]+=area;
     plane[label].n += n;
     a=(m.t[ii].c * area);
@@ -1292,9 +1293,9 @@ GLcharARB * read_entire_file(const char * filename, int * len )
   }
   GLcharARB * buf=0;
   fseek(file, 0, SEEK_END);
-	size_t length = ftell(file);
-	fseek(file, 0, SEEK_SET);
-	buf = new GLcharARB[length+1];
+  size_t length = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  buf = new GLcharARB[length+1];
   length = fread( buf, 1, length, file);
   buf[length]=0;
   *len=length;

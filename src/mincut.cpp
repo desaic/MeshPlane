@@ -15,14 +15,13 @@ float L1n(Vec3f v)
 }
 real_t mcdistance( Plane & p, Trig &t)
 {
-
-  float plane_d = dot(p.n,p.c);
-  float d = dot(t.c,p.n);
-  real_t  cost = distw * std::abs(plane_d-d);
-  cost += L1n(t.n- p.n);
-      cost /= (1+distw);
-      cost*=t.A;
-  return cost;
+	float plane_d = dot(p.n, p.c);
+	float d = dot(t.c, p.n);
+	real_t cost = distw * std::abs(plane_d - d);
+	cost += L1n(t.n - p.n);
+	cost /= (1 + distw);
+	cost *= t.A;
+	return cost;
 }
 void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
 	       std::vector<std::vector< float > > & datac)
