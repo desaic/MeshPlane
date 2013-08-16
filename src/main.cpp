@@ -314,7 +314,7 @@ void* iterate(void* arg){
   dataCostW=2000;
 //  smoothW=400;
   saliency_weight=5;
-  distw=15;
+  distw=10;
 
   initKmeans(*m);
   for(int ii=0;ii<ITER;ii++){
