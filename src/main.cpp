@@ -472,7 +472,7 @@ int main(int argc, char** argv)
   minc_nlabel=nLabel;
   if(label_file[0]){
     Mesh mtemp(label_file,1);
-    m->v=mtemp.v;
+    //m->v=mtemp.v;
     m->nLabel=mtemp.nLabel;
     for(size_t ii=0;ii<m->t.size();ii++){
       m->t[ii].label=mtemp.t[ii].label;
