@@ -11,10 +11,10 @@ libdirs{"lib"}
 links{"GLEW", "GLU", "glut", "GL"}
 links{"mesh_query", "png", "pthread"}
 configuration {"Debug"}
-              defines{"Debug"}
-              flags{"Symbols"}
+  defines{"Debug"}
+  flags{"Symbols"}
               
-              configuration {"Release"}
-              defines{"NDebug"}
-              flags{"Optimize"}
+configuration {"Release"}
+  defines{"NDebug"}
+  flags{"Optimize"}
               
