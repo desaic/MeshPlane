@@ -10,7 +10,7 @@
 #include <GL/gl.h>
 //by default counterclockwise winding is front face
 struct Trig{
-  Trig():label(0){x[0]=0;x[1]=0;x[2]=0;x[3]=0;
+  Trig():label(0),A(0){x[0]=0;x[1]=0;x[2]=0;x[3]=0;
     texId[0]=0;texId[1]=0;texId[2]=0;}
   int & operator[](const int i) {return x[i];}
   int operator[](const int i)const {return x[i];}
@@ -73,7 +73,10 @@ public:
   std::vector<Vec3f>n;
   std::vector<Vec3f>v4;
   std::vector<std::vector<int> >  adjMat;
-  Mesh():v(0),t(0),remap_tex(0){}
+  Mesh():nLabel(0),highlight(0),
+	  v(0),t(0),remap_tex(0),texture(0),tex_buf(0),has_v4(0),
+		  checkIntersect(0),fbo(0),fbot(0),select_shader(0),
+		  autoscale(0){}
   Mesh(const char * filename,int _nLabel=50, bool _auto=true);
   void adjlist();
   void draw(std::vector<Vec3f>&v);

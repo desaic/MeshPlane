@@ -17,7 +17,7 @@ void update_distance(std::vector<real_t > & dist,
     real_t d = tpdistance(m.t[ii], plane[ll]);
     if(d<dist[ii] ){
       dist[ii]=d;
- //     m.t[ii].label=ll;
+   //   m.t[ii].label=ll;
     }
     sum+=dist[ii]*dist[ii];
     cdf[ii]=sum;
@@ -89,7 +89,7 @@ void flood(Mesh & m, const std::vector<int> & centroids,
   for(size_t ii=0;ii<centroids.size();ii++){
     int cidx=centroids[ii];
     if(cidx<0){
-      std::cout<<ii<<" "<<cidx<<"wtf\n";
+      std::cout<<"Error in flood. Uninitialized triangle id for centroid "<<ii<<"\n";
     }
     real_t dist = tpdistance(m.t[cidx], plane[ii]);
     pq.push(TrigDist(cidx, m.t[cidx].label, dist) );
@@ -161,6 +161,6 @@ void runKmeans(Mesh & m)
   std::vector<int>centroid;
   //M step
   findCentroids(m,plane,centroid);
-  //E step. not really
+  //approximate E step.
   flood(m,centroid,plane);
 }

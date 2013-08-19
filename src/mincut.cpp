@@ -6,8 +6,8 @@
 #define SWAP(a,b)  (a)^=(b);(b)^=(a);(a)^=(b);
 int minc_nlabel=50;
 float dataCostW=100;
-float smoothW=10;
-float distw = 30;
+float smoothW=100;
+float distw = 10;
 real_t saliency_weight=1;
 float L1n(Vec3f v)
 {
@@ -15,14 +15,13 @@ float L1n(Vec3f v)
 }
 real_t mcdistance( Plane & p, Trig &t)
 {
-
-  float plane_d = dot(p.n,p.c);
-  float d = dot(t.c,p.n);
-  real_t  cost = distw * std::abs(plane_d-d);
-  cost += L1n(t.n- p.n);
-      cost /= (1+distw);
-      cost*=t.A;
-  return cost;
+	float plane_d = dot(p.n, p.c);
+	float d = dot(t.c, p.n);
+	real_t cost = distw * std::abs(plane_d - d);
+	cost += L1n(t.n - p.n);
+	cost /= (1 + distw);
+	cost *= t.A;
+	return cost;
 }
 void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
 	       std::vector<std::vector< float > > & datac)

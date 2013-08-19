@@ -2,15 +2,13 @@
 #include <windows.h>
 #endif
 
-#include "bp.hpp"
 #include "cgd.hpp"
 #include "kmeans.hpp"
 #include "mesh.hpp"
 #include "mesh_query.h"
 #include "mincut.hpp"
 #include <imageio.h>
-#include "poly.hpp"
-#include"quat.h"
+#include "quat.h"
 #include "saliency.hpp"
 #include "voxel.hpp"
 
@@ -38,7 +36,6 @@ int ldown;
 int oldx,oldy;
 extern int minc_nlabel;
 
-//static Poly * p;
 struct Cam{
   Cam():rotx(0),roty(0){
     for (int ii=0;ii<3;ii++){
@@ -64,11 +61,9 @@ void init(void)
   glEnable(GL_ALPHA);
   // glEnable(GL_NORMALIZE);
 
-
   GLfloat white[]={1.0,1.0,1.0,1.0};
   glLightfv (GL_LIGHT1, GL_DIFFUSE, white);
   glLightfv (GL_LIGHT1, GL_SPECULAR, white);
-
 
   if(draw_tex||draw_uv){
     glMatrixMode (GL_PROJECTION);
@@ -76,8 +71,6 @@ void init(void)
     glOrtho(-0.5,0.5,-0.5,0.5,10,0.1);
   }
 }
-
-
 
 void display(void)
 {
@@ -318,18 +311,17 @@ void* iterate(void* arg){
   wV0=50;
   wPt=0.5;
   vW=1;
-  dataCostW=10000;
+  dataCostW=2000;
 //  smoothW=400;
   saliency_weight=5;
-  distw=15;
+  distw=10;
 
- // BP bp(*m);
   initKmeans(*m);
   for(int ii=0;ii<ITER;ii++){
     wPt+=3;
     printf("iter %d\n",ii);
     runMincut(*m);
-    //runKmeans(*m);
+//    runKmeans(*m);
     printf("cut\n");
     m->compute_plane();
     cgd(*m);
@@ -474,7 +466,6 @@ int main(int argc, char** argv)
   m=new Mesh (argv[1],nLabel, autoscale);
   m->checkIntersect = checkIntersect;
   m->init_select("shader/select.glsl");
-  // m->load_ptex("bull.ptx");
   if(tex_file[0]){
     m->load_tex(tex_file);
   }
@@ -543,10 +534,8 @@ int main(int argc, char** argv)
   pthread_detach(hlthread);
   cam=new Cam();
   rot=Quat(Vec3(1,0,0),0);
-  //rot=Quat(Vec3(0.211347, 0.94378, -0.254189),11.1752*3.141592/180);
   ldown=0;
   glutMainLoop();
   return 0;
-//p=new Poly(m);
 }
 
