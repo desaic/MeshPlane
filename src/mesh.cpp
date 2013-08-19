@@ -1268,7 +1268,7 @@ void get_plane(Mesh & m , std::vector<Plane> & plane)
     Vec3f n = cross(a,b);
     float area = mag(n);
     int label = m.t[ii].label;
-    std::cout<<label<<"\n";
+    //std::cout<<label<<"\n";
     cnt[label]+=area;
     plane[label].n += n;
     a=(m.t[ii].c * area);
