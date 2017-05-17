@@ -2,10 +2,17 @@
 #define MESH_H
 #include <vector>
 #include <fstream>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <Windows.h>
+#endif 
+
 #include <GL/glew.h>
 #include "math.hpp"
 
-#include <GL/gl.h>
+//#include <GL/gl.h>
+#include <map>
 //by default counterclockwise winding is front face
 struct Trig{
   Trig():label(0){x[0]=0;x[1]=0;x[2]=0;x[3]=0;
@@ -56,7 +63,7 @@ struct EdgeId{
   }
 };
 
-#include <map>
+
 class Mesh{
 public:
   int nLabel;

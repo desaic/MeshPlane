@@ -16,6 +16,9 @@
 #include <map>
 #include <sstream>
 #include <string.h>
+#include <thread>
+#include <mutex>
+#include <set>
 #include "imageio.h"
 #include "util.h"
 bool contains(int * a ,  int x, size_t size)
@@ -173,9 +176,9 @@ int findEdge(int va, int vb, std::vector<Trig>& t,
   }
   return cnt;
 }
-#include <pthread.h>
-pthread_mutex_t meshm = PTHREAD_MUTEX_INITIALIZER;
-#include <set>
+
+std::mutex meshm;
+
 
 bool isOnEdge(int vidx, std::vector<std::vector<int > > & adjMat,
               std::vector<std::vector<int > > & vtlist,
@@ -388,30 +391,30 @@ void Mesh::compute_plane()
     }
   }
 
-  pthread_mutex_lock(&meshm);
+  meshm.lock();
   lines = local_lines;
-  pthread_mutex_unlock(&meshm);
+  meshm.unlock();
 }
 
 void Mesh::load_tex(const char * filename) {
-  int width,height;
-  unsigned char * buf = imageio_load_image(filename, &width,&height);
-  if(!buf) {
-    return;
-  }
-  tex_buf=buf;
-  glEnable(GL_TEXTURE_2D);
-  glGenTextures(1,&texture);
-  glBindTexture( GL_TEXTURE_2D, texture );
-  //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_LUMINANCE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                  GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-               width,  height,  0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-  printf("gl error %d\n",glGetError());
-  printf("max size %d\n",GL_MAX_TEXTURE_SIZE);
+  //int width,height;
+  //unsigned char * buf = imageio_load_image(filename, &width,&height);
+  //if(!buf) {
+  //  return;
+  //}
+  //tex_buf=buf;
+  //glEnable(GL_TEXTURE_2D);
+  //glGenTextures(1,&texture);
+  //glBindTexture( GL_TEXTURE_2D, texture );
+  ////glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_LUMINANCE);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+  //                GL_NEAREST);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+  //                GL_NEAREST);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+  //             width,  height,  0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+  //printf("gl error %d\n",glGetError());
+  //printf("max size %d\n",GL_MAX_TEXTURE_SIZE);
 }
 void Mesh::save_plane(const char * filename)
 {
@@ -1035,7 +1038,7 @@ void Mesh::drawLines()
   glDisable(GL_TEXTURE_2D);
   glBegin(GL_LINES);
   glColor3f(0.19,0.19,0.29);
-  pthread_mutex_lock(&meshm);
+  meshm.lock();
 
   for(size_t ii=0; ii<lines.size(); ii++) {
     for(size_t jj=0; jj<lines[ii].size(); jj++) {
@@ -1062,7 +1065,7 @@ void Mesh::drawLines()
       }
     }
   }
-  pthread_mutex_unlock(&meshm);
+  meshm.unlock();
   glEnd();
   glEnable(GL_TEXTURE_2D);
   glEnable(GL_LIGHTING);

@@ -4,7 +4,7 @@
 #ifndef real_t
 #define real_t double
 #endif
-#include <cstddef>//for size_t
+//#include <cstddef>//for size_t
 #include <vector>
 struct Vec3{
   Vec3(real_t _x=0.0f, real_t  _y=0.0f, real_t _z=0.0f)

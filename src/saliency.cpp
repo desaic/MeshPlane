@@ -57,64 +57,64 @@ void trace_edge(Mesh & m, int tidx, int kk0,int kk1, Mapper & mapper)
 
 void usr_map(const char * filename, Mesh & m)
 {
-  int width, height;
-  unsigned char * buf = imageio_load_image(filename, &width, &height);
-  m.adjlist();
+  //int width, height;
+  //unsigned char * buf = imageio_load_image(filename, &width, &height);
+  //m.adjlist();
 
-  for(size_t tidx=0; tidx<m.t.size(); tidx++) {
-    for(size_t jj=0; jj<m.adjMat[tidx].size(); jj++) {
-      int nbr=m.adjMat[tidx][jj];
-      int kk=0;
-      bool foundExclude=false;
-      for(kk=0; kk<3; kk++) {
-        int vidx=m.t[tidx][kk];
-        if(!contains(m.t[nbr].x, vidx,3)) {
-          foundExclude=true;
-          break;
-        }
-      }
-      if(!foundExclude) {
-        //shouldn't really happen
-        continue;
-      }
-      SumMapper mapper(buf,width,height);
-      trace_edge(m,tidx,(kk+1)%3,(kk+2)%3,mapper);
-      trace_edge(m,nbr,(kk+1)%3,(kk+2)%3,mapper);
-      m.usr_weit[EdgeId(tidx,nbr)]=(mapper.sum/255.0)/mapper.cnt;
-    }
-  }
-  delete []buf;
+  //for(size_t tidx=0; tidx<m.t.size(); tidx++) {
+  //  for(size_t jj=0; jj<m.adjMat[tidx].size(); jj++) {
+  //    int nbr=m.adjMat[tidx][jj];
+  //    int kk=0;
+  //    bool foundExclude=false;
+  //    for(kk=0; kk<3; kk++) {
+  //      int vidx=m.t[tidx][kk];
+  //      if(!contains(m.t[nbr].x, vidx,3)) {
+  //        foundExclude=true;
+  //        break;
+  //      }
+  //    }
+  //    if(!foundExclude) {
+  //      //shouldn't really happen
+  //      continue;
+  //    }
+  //    SumMapper mapper(buf,width,height);
+  //    trace_edge(m,tidx,(kk+1)%3,(kk+2)%3,mapper);
+  //    trace_edge(m,nbr,(kk+1)%3,(kk+2)%3,mapper);
+  //    m.usr_weit[EdgeId(tidx,nbr)]=(mapper.sum/255.0)/mapper.cnt;
+  //  }
+  //}
+  //delete []buf;
 }
 
 void saliency_map(const char * filename, Mesh & m)
 {
-  int width, height;
-  unsigned char * buf = imageio_load_image(filename, &width, &height);
-  m.adjlist();
-  MaxMapper mapper(buf,width,height);
-  for(size_t tidx=0; tidx<m.t.size(); tidx++) {
-    mapper.max=0;
-    for(size_t jj=0; jj<m.adjMat[tidx].size(); jj++) {
-      int nbr=m.adjMat[tidx][jj];
-      int kk=0;
-      bool foundExclude=false;
-      for(kk=0; kk<3; kk++) {
-        int vidx=m.t[tidx][kk];
-        if(!contains(m.t[nbr].x, vidx,3)) {
-          foundExclude=true;
-          break;
-        }
-      }
-      if(!foundExclude) {
-        //shouldn't really happen
-        continue;
-      }
-      trace_edge(m,tidx,(kk+1)%3,(kk+2)%3,mapper);
-      trace_edge(m,nbr,(kk+1)%3,(kk+2)%3,mapper);
-      m.saliency[EdgeId(tidx,nbr)]=mapper.max/255.0;
-    }
-  }
-  delete []buf;
+  //int width, height;
+  //unsigned char * buf = imageio_load_image(filename, &width, &height);
+  //m.adjlist();
+  //MaxMapper mapper(buf,width,height);
+  //for(size_t tidx=0; tidx<m.t.size(); tidx++) {
+  //  mapper.max=0;
+  //  for(size_t jj=0; jj<m.adjMat[tidx].size(); jj++) {
+  //    int nbr=m.adjMat[tidx][jj];
+  //    int kk=0;
+  //    bool foundExclude=false;
+  //    for(kk=0; kk<3; kk++) {
+  //      int vidx=m.t[tidx][kk];
+  //      if(!contains(m.t[nbr].x, vidx,3)) {
+  //        foundExclude=true;
+  //        break;
+  //      }
+  //    }
+  //    if(!foundExclude) {
+  //      //shouldn't really happen
+  //      continue;
+  //    }
+  //    trace_edge(m,tidx,(kk+1)%3,(kk+2)%3,mapper);
+  //    trace_edge(m,nbr,(kk+1)%3,(kk+2)%3,mapper);
+  //    m.saliency[EdgeId(tidx,nbr)]=mapper.max/255.0;
+  //  }
+  //}
+  //delete []buf;
 }
 
 

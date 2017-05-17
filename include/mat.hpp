@@ -1,7 +1,7 @@
 #ifndef MAT_HPP
 #define MAT_HPP
 #include "mesh.hpp"
-
+#include <algorithm>
 class Mat3
 {
  public:

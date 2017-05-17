@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
 #include "mesh.hpp"
 
 #include "poly.hpp"
@@ -25,6 +26,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <thread>
 static Mesh * m;
 
 static Quat rot;
@@ -80,19 +82,19 @@ void display(void)
   if(draw_tex){
     m->drawPlane(planeId);
     glFlush ();
-    if(planeId<(int)m->planes.size()){
-      std::stringstream ss;
-      ss<<planeId<<".png";
-      imageio_save_screenshot(ss.str().c_str());
-      planeId++;
-    }
+    //if(planeId<(int)m->planes.size()){
+    //  std::stringstream ss;
+    //  ss<<planeId<<".png";
+    //  imageio_save_screenshot(ss.str().c_str());
+    //  planeId++;
+    //}
     return;
   }
   else if(draw_uv){
     m->draw_tex();
     glFlush();
     if(planeId==0){
-      imageio_save_screenshot("remap_tex.png");
+      //imageio_save_screenshot("remap_tex.png");
       planeId++;
     }
     return;
@@ -164,12 +166,12 @@ void display(void)
 
   if(running){
 
-    char buf[32]="anim/";
-    sprintf(buf+5,"%04d",imgnum);
-    strcat(buf,".png");
-    imageio_save_screenshot(buf);
-    printf("%d\n",imgnum);
-    imgnum++;
+    //char buf[32]="anim/";
+    //sprintf(buf+5,"%04d",imgnum);
+    //strcat(buf,".png");
+    ////imageio_save_screenshot(buf);
+    //printf("%d\n",imgnum);
+    //imgnum++;
   }
 
 }
@@ -234,7 +236,7 @@ void keyboard(unsigned char key,int x, int y)
     std::cout<<angle<<"\n";
     break;
   case 'x':
-    imageio_save_screenshot("screenshot.png");
+    //imageio_save_screenshot("screenshot.png");
     break;
   case 'o':
     m->save_obj("mesh.obj");
@@ -298,8 +300,6 @@ void animate(int t)
   glutPostRedisplay();
 
 }
-
-#include <pthread.h>
 
 extern int minc_nlabel;
 void* iterate(void* arg){
@@ -496,13 +496,12 @@ int main(int argc, char** argv)
     MC_ITER=1;
     m->compute_plane();
   //  running=true;
-    pthread_t thread;
-    pthread_create(&thread, 0, iterate,(void*)m);
-    pthread_detach(thread);
+	std::thread thread;
+	thread = std::thread(iterate,(void*)m);
   }
-  pthread_t hlthread;
-  pthread_create(&hlthread,0,scanHighlight,(void*)m);
-  pthread_detach(hlthread);
+  std::thread hlthread;
+  hlthread = std::thread(scanHighlight,(void*)m);
+  
   cam=new Cam();
   rot=Quat(Vec3(1,0,0),0);
   //rot=Quat(Vec3(0.211347, 0.94378, -0.254189),11.1752*3.141592/180);
