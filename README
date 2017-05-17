@@ -1,1 +1,5 @@
-converts a closed mesh into around 50 planar polygons
+converts a closed mesh into around 50 planar polygons.
+
+TODO:
+replace mesh_query with MCCD.
+replace Ptex.
