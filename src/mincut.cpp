@@ -8,13 +8,15 @@ int minc_nlabel=50;
 float dataCostW=100;
 float smoothW=10;
 float distw = 30;
+//weight for distance between triangle center and plant center.
+float distCenterW = 1;
 real_t saliency_weight=1;
 real_t mcdistance( Plane & p, Trig &t)
 {
 
   float plane_d = p.n.dot(p.c);
-      float d = t.c.dot(p.n);
-      real_t  cost = distw * std::abs(plane_d-d);
+      float d = (t.c - p.c).dot(p.n);
+	  real_t  cost = distw *std::abs( d);
       cost += (t.n- p.n).L1n();
       cost /= (1+distw);
       cost*=t.A;
@@ -214,13 +216,14 @@ void runMincut(Mesh &mesh)
       gc->setNeighbors(ii,mesh.adjMat[ii][nbr]);
     }
   }
+  int gcIter = 100000000;
   for (int iter = 0;iter<MC_ITER;iter++){
     printf("%d\n",iter);
     data_cost(mesh, minc_nlabel, plane, datac);
     smooth_cost(mesh,smoothc);
     scale(datac, dataCostW);
     scale(smoothc, smoothW);
-    gc->expansion();
+    gc->expansion(gcIter);
     for(size_t ii =0 ;ii<mesh.t.size();ii++){
       mesh.t[ii].label= gc->whatLabel(ii);
     }

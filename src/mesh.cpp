@@ -311,6 +311,7 @@ void Mesh::compute_plane()
   }
   get_normal_center();
   get_plane(*this, planes);
+  std::cout << "#planes " << planes.size() << "\n";
   std::vector<bool>processed(t.size());
   for(size_t ii=0; ii<t.size(); ii++) {
     if(processed[ii]){

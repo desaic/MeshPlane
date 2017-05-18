@@ -405,6 +405,7 @@ void cgd(Mesh & m)
 //  int width = 3*(m.v.size());
   int width = 3*(m.v.size()+m.t.size());
   //nvar=m.v.size();
+  std::cout << "compute mesh info\n";
   nvar=m.v.size()+m.t.size();
   std::vector<Plane>plane;
   get_plane(m,plane);
@@ -412,8 +413,10 @@ void cgd(Mesh & m)
   std::vector<Mat3>mat;
   vmat(m,mat);
   m.adjlist();
+
   CCS ccs;
   std::vector<double >b;
+  std::cout << "compute matrix rows info\n";
   //b for smoothness matrix is 0
   //smooth_mat(m,mat,wS,ccs);
   vert_smooth_mat(m,wS,ccs,b);
@@ -423,6 +426,7 @@ void cgd(Mesh & m)
   b.resize(height,0.0);
   SparseCCS* s = new SparseCCS(width, height, &ccs.vals[0], &ccs.rowInds[0], &ccs.colPtr[0]);
   SparseCCS* st = s->transposed();
+  std::cout << "compute AA^T\n";
   SparseCCS* sst=s->multiply_LM(*st);
   SparseMatrixOutline *outline = new SparseMatrixOutline(width);
 //printAB(ccs,b,0);
@@ -441,34 +445,24 @@ void cgd(Mesh & m)
   // delete s;
   delete st;
   delete sst;
-
+  std::cout << "matrix assembly\n";
   SparseMatrix A(outline);
   delete outline;
+
+  std::cout << "lin solve\n";
   CGSolver solver(&A);
   double * x=new double [width];
   vertex2arr(m,x);
 
-  double eps = 1E-9;
-  int maxIter = 20;
+  double eps = 1E-6;
+  int maxIter = 50;
 
   int verbose = 0;
    int ret = solver.SolveLinearSystemWithJacobiPreconditioner(x, ATb, eps, maxIter, verbose);//
-  if(ret<0) {
-    printf("optimization error\n");
-   }
-  /* gradient descent
-  double * g = new double[width];
-  double * Ag=new double[width];
-  for(int iter=0;iter<maxIter;iter++){
-    A.MultiplyVector(x, g);
-    subtract(g, ATb,width);
-    real_t alpha = solver.DotProduct(g,g);
-    A.MultiplyVector(g,Ag);
-    alpha /= solver.DotProduct(g,Ag);
-    scale(g,alpha,width);
-    subtract(x, g, width);
-  }
-  */
+  //if(ret<0) {
+  //  printf("optimization error\n");
+  // }
+
   A.CheckLinearSystemSolution(x,ATb);
   printf("\n");
   array2vertex(x,m);

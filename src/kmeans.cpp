@@ -5,6 +5,7 @@
 #include <queue>
 #include <iostream>
 extern float distw;
+extern float distCenterW;
 real_t tpdistance(Trig & t , Plane & p);
 
 void update_distance(std::vector<real_t > & dist,
@@ -17,7 +18,7 @@ void update_distance(std::vector<real_t > & dist,
     real_t d = tpdistance(m.t[ii], plane[ll]);
     if(d<dist[ii] ){
       dist[ii]=d;
- //     m.t[ii].label=ll;
+      m.t[ii].label=ll;
     }
     sum+=dist[ii]*dist[ii];
     cdf[ii]=sum;
@@ -27,8 +28,10 @@ void update_distance(std::vector<real_t > & dist,
 real_t tpdistance(Trig & t , Plane & p)
 {
   real_t cost = (t.n-p.n).norm();
-  //cost += distw*((t.c-p.c).norm());
-  //cost /= (1+distw);
+  float nlen = (t.c - p.c).dot(p.n) ;
+  cost += distw*std::abs( nlen);
+  cost += distCenterW * (t.c - p.c - nlen * p.n).norm();
+  cost /= (1+distw + distCenterW);
   return cost;
 }
 
@@ -66,7 +69,7 @@ void findCentroids(Mesh & m, std::vector<Plane> & plane, std::vector<int> &centr
   std::vector<real_t> minDist ;
   centroid.resize(plane.size());
   centroid.assign(centroid.size(),-1);
-  minDist.resize(centroid.size());
+  minDist.resize(centroid.size(),100);
   for(size_t ii=0;ii<m.t.size();ii++){
     int ll = m.t[ii].label;
     real_t dist = tpdistance(m.t[ii],plane[ll]);
@@ -144,11 +147,23 @@ void initKmeans(Mesh & m)
   }
 
   for(int kk=1;kk<m.nLabel;kk++){
-    int center = sample_cdf(cdf);
+    //kmeans++
+	  //int center = sample_cdf(cdf);
+	//furthest sampling
+	  float maxDist = 0;
+	  int center = 0;
+	  for (int j = 0; j < dist.size(); j++) {
+		  if (dist[j] > maxDist) {
+			  maxDist = dist[j];
+			  center = j;
+		  }
+	  }
+	  
     centroids[kk]=center;
     plane[kk].n=m.t[center].n;
     plane[kk].c=m.t[center].c;
-    //std::cout<<kk<<"\n";
+ //   std::cout<<kk<<": "<< center <<"\n";
+	//std::cout << plane[kk].c[0] << " " << plane[kk].c[1] << " " << plane[kk].c[2] << "\n";
     update_distance(dist, cdf ,plane,m,kk);
   }
   flood(m,centroids, plane);

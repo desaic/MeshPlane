@@ -1,5 +1,5 @@
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #endif
 
 #include "mesh.hpp"
@@ -263,12 +263,12 @@ void mouse(int button, int state, int x, int y)
       break;
     case GLUT_UP:
       ldown=0;
-      glBindFramebuffer(GL_FRAMEBUFFER,m->fbo);
-      glFlush();
-      unsigned char buf[4];
-      glReadPixels(x, 720-y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-      unsigned int l = b2int((GLubyte*)buf);
-      std::cout<<l<<"\n";
+      //glBindFramebuffer(GL_FRAMEBUFFER,m->fbo);
+      //glFlush();
+      //unsigned char buf[4];
+      //glReadPixels(x, 720-y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+      //unsigned int l = b2int((GLubyte*)buf);
+      //std::cout<<"cluster id "<<l<<"\n";
       glBindFramebuffer(GL_FRAMEBUFFER,0);
       break;
     }
@@ -303,7 +303,7 @@ void animate(int t)
 
 extern int minc_nlabel;
 void* iterate(void* arg){
-  int ITER=100;
+  int ITER=50;
   MC_ITER=1;
   Mesh * m=(Mesh*)arg;
   wS=0.1;
@@ -311,16 +311,17 @@ void* iterate(void* arg){
   wV0=50;
   wPt=0.5;
   vW=1;
-  dataCostW=10000;
-//  smoothW=400;
+  dataCostW=100;
+  smoothW=40;
  //   smoothW=50;
   saliency_weight=5;
-	distw=15;
-
+  distw=15;
+  //gradually increase weight for planarity constraint.
+  float maxWPlanar = 300;
  // BP bp(*m);
   initKmeans(*m);
   for(int ii=0;ii<ITER;ii++){
-    wPt+=3;
+    wPt = ((ii+1.0f)/ITER) * maxWPlanar;
     printf("iter %d\n",ii);
     runMincut(*m);
     //runKmeans(*m);
@@ -483,16 +484,15 @@ int main(int argc, char** argv)
   std::thread thread;
   //draw_tex=true;
   if(run){
-
     wS=1;
     wI=1;
     wV0=20;
     wPt=1;
     vW=1;
-    dataCostW=10000;
+    dataCostW=100;
     //smoothW=2500;
     saliency_weight=10;
-  distw=3;
+    distw=3;
     MC_ITER=1;
     m->compute_plane();
   //  running=true;
