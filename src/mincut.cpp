@@ -7,7 +7,7 @@
 int minc_nlabel=50;
 float dataCostW=100;
 float smoothW=10;
-float distw = 30;
+float distw = 3;
 //weight for distance between triangle center and plant center.
 float distCenterW = 1;
 real_t saliency_weight=1;
@@ -16,18 +16,18 @@ real_t mcdistance( Plane & p, Trig &t)
 
   float plane_d = p.n.dot(p.c);
       float d = (t.c - p.c).dot(p.n);
-	  real_t  cost = distw *std::abs( d);
-      cost += (t.n- p.n).L1n();
+	  real_t cost = (t.n - p.n).L1n();
+
+	  cost += distw *std::abs( d);
       cost /= (1+distw);
-      cost*=t.A;
+	  
+	  cost*=t.A;
   return cost;
 }
 void data_cost(Mesh & m, int nLabel, std::vector<Plane>&plane,
 	       std::vector<std::vector< float > > & datac)
 {
   //recalculate center and normals for each face since the mesh is morphed
-	m.get_normal_center();
-  randcenter(m,plane,nLabel);
   datac.resize(m.t.size());
   float mn = -1;
   float mx = -1;
@@ -202,7 +202,7 @@ void runMincut(Mesh &mesh)
 {
   std::vector<std::vector<float> >datac;
   std::map<EdgeId , float >smoothc;
-  std::vector<Plane> plane;
+  //std::vector<Plane> plane;
 
   GCoptimizationGeneralGraph * gc = new GCoptimizationGeneralGraph(mesh.t.size(),minc_nlabel);
 
@@ -216,10 +216,13 @@ void runMincut(Mesh &mesh)
       gc->setNeighbors(ii,mesh.adjMat[ii][nbr]);
     }
   }
-  int gcIter = 100000000;
+  int gcIter = 10000;
+  mesh.get_normal_center();
+  get_plane(mesh, mesh.planes);
+
   for (int iter = 0;iter<MC_ITER;iter++){
     printf("%d\n",iter);
-    data_cost(mesh, minc_nlabel, plane, datac);
+    data_cost(mesh, minc_nlabel, mesh.planes, datac);
     smooth_cost(mesh,smoothc);
     scale(datac, dataCostW);
     scale(smoothc, smoothW);

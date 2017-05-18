@@ -67,6 +67,7 @@ struct EdgeId{
 class Mesh{
 public:
   int nLabel;
+  int targetLabel;
   std::map<int,bool>bad;
   bool self_intersect();
   std::vector<Vec3>v;

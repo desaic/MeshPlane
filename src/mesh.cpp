@@ -21,6 +21,8 @@
 #include <set>
 #include "imageio.h"
 #include "util.h"
+#include "randomc.h"
+
 bool contains(int * a ,  int x, size_t size)
 {
   for(size_t ii=0; ii<size; ii++) {
@@ -748,7 +750,7 @@ void Mesh::save_obj(const char * filename)
 }
 
 Mesh::Mesh(const char * filename, int _nLabel , bool _auto)
-  :nLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),checkIntersect(0),
+  :nLabel(_nLabel), targetLabel(_nLabel),highlight(1000),remap_tex(0),fbo(0),checkIntersect(0),
   tex_buf(0),autoscale(_auto)
 
 {
@@ -1129,7 +1131,6 @@ void update_distance(std::vector<real_t > & dist,
                       std::vector<Plane> & plane,
                       Mesh & m, int ll);
 
-#include "randomc.h"
 //pick random triangles as centers of clusters
 void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
 {
@@ -1159,7 +1160,6 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     if(count[ii]>0) {
       plane[ii].n/=plane[ii].n.norm();
       plane[ii].c/=count[ii];
-
     }
   }
   for(int ii=0; ii<nLabel; ii++) {
@@ -1177,14 +1177,15 @@ void randcenter(Mesh & m,std::vector<Plane>&plane, int nLabel)
     }
   }
 }
+
 /**@param m assume triangle norms and centers are already computed
  */
 void get_plane(Mesh & m , std::vector<Plane> & plane)
 {
-  plane.resize(m.nLabel);
+  plane = std::vector<Plane>(m.nLabel);
   std::vector<float > cnt (m.nLabel,0);
   for(size_t ii=0; ii<m.t.size(); ii++) {
-    if(m.t[ii].A<0.000001){
+    if(m.t[ii].A<1e-6){
       continue;
     }
     Vec3 a = m.v[m.t[ii][1]] -  m.v[m.t[ii][0]];

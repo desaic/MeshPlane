@@ -311,18 +311,22 @@ void* iterate(void* arg){
   wV0=50;
   wPt=0.5;
   vW=1;
-  dataCostW=100;
-  smoothW=40;
+  dataCostW=200;
+  smoothW=50;
  //   smoothW=50;
   saliency_weight=5;
-  distw=15;
+  distw=3;
   //gradually increase weight for planarity constraint.
   float maxWPlanar = 300;
  // BP bp(*m);
-  initKmeans(*m);
+  //initKmeans(*m);
   for(int ii=0;ii<ITER;ii++){
     wPt = ((ii+1.0f)/ITER) * maxWPlanar;
     printf("iter %d\n",ii);
+
+	m->nLabel = m->targetLabel;
+
+	initKmeans(*m);
     runMincut(*m);
     //runKmeans(*m);
     printf("cut\n");

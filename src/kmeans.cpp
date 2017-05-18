@@ -166,6 +166,7 @@ void initKmeans(Mesh & m)
 	//std::cout << plane[kk].c[0] << " " << plane[kk].c[1] << " " << plane[kk].c[2] << "\n";
     update_distance(dist, cdf ,plane,m,kk);
   }
+  m.planes = plane;
   flood(m,centroids, plane);
 }
 
