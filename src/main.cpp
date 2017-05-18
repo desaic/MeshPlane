@@ -480,7 +480,7 @@ int main(int argc, char** argv)
   }
 
   m->save_plane("plane.txt");
-
+  std::thread thread;
   //draw_tex=true;
   if(run){
 
@@ -496,7 +496,7 @@ int main(int argc, char** argv)
     MC_ITER=1;
     m->compute_plane();
   //  running=true;
-	std::thread thread;
+
 	thread = std::thread(iterate,(void*)m);
   }
   std::thread hlthread;
